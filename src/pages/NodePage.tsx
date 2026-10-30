@@ -1,0 +1,79 @@
+import { KNOWN_RELAYS, REPO_URL } from '../lib/config';
+
+// Короткая инструкция для тех, кто хочет поднять узел. Подробная — selfhost/README.md;
+// команды здесь должны с ней совпадать.
+export function NodePage() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const here = `${proto}//${location.host}`;
+  const readme = `${REPO_URL}/blob/master/selfhost/README.md`;
+
+  return (
+    <div class="form-narrow">
+      <h1>Свой узел Книгописи</h1>
+      <p>
+        Книгопись держится на узлах — серверах, которые хранят копию всех записей и отдают сайт. Узлы равноправны и
+        обмениваются записями друг с другом, поэтому чем их больше, тем меньше Книгопись зависит от одного хостинга.
+        Подделать чужую запись узел не может: каждая подписана ключом автора.
+      </p>
+
+      <h3>Что понадобится</h3>
+      <ul>
+        <li>сервер на Linux (x86_64) с Docker;</li>
+        <li>512 МБ памяти и около гигабайта диска;</li>
+        <li>домен или поддомен, указывающий на сервер.</li>
+      </ul>
+
+      <h3>Установка</h3>
+      <pre>
+        <code>
+          {`git clone ${REPO_URL}.git /opt/knigopis
+cd /opt/knigopis/selfhost
+cp .env.example .env
+./update.sh`}
+        </code>
+      </pre>
+      <p>
+        В файле <code>.env</code> укажите свой домен (<code>DOMAIN</code>) и узел, с которым синхронизироваться:
+      </p>
+      <pre>
+        <code>{`UPSTREAM=${here}`}</code>
+      </pre>
+      <p>
+        <code>update.sh</code> скачает готовый сайт и relay из релиза и запустит их; сертификат HTTPS получится сам. Если
+        на сервере уже работает nginx или Caddy, в инструкции есть готовый конфиг для него.
+      </p>
+
+      <h3>Дальше</h3>
+      <ol>
+        <li>Первая синхронизация заберёт все записи — это минуты. Потом узлы обмениваются ими сами.</li>
+        <li>
+          Пришлите адрес своего узла (pull request в <code>src/known-relays.json</code>) — тогда все читатели начнут
+          сохранять записи и на него.
+        </li>
+        <li>
+          Пока адреса нет в списке, свой узел можно добавить вручную: <a href="/settings">Настройки → Серверы</a>.
+        </li>
+      </ol>
+
+      <h3>Без своего сервера</h3>
+      <p>
+        Можно сделать зеркало сайта: выложите <code>knigopis-site.tar.gz</code> из{' '}
+        <a href={`${REPO_URL}/releases/latest`}>релиза</a> на любой статический хостинг, хоть на GitHub Pages. Записи
+        зеркало будет брать с известных узлов.
+      </p>
+
+      <h3>Известные узлы</h3>
+      <ul>
+        {KNOWN_RELAYS.map((url) => (
+          <li key={url}>
+            <code>{url}</code>
+          </li>
+        ))}
+      </ul>
+
+      <p>
+        Подробная инструкция: <a href={readme}>selfhost/README.md</a>.
+      </p>
+    </div>
+  );
+}

@@ -13,6 +13,7 @@ import { BookForm } from './pages/BookForm';
 import { Home } from './pages/Home';
 import { Import } from './pages/Import';
 import { Login } from './pages/Login';
+import { NodePage } from './pages/NodePage';
 import { NotFound } from './pages/NotFound';
 import { Search } from './pages/Search';
 import { Settings } from './pages/Settings';
@@ -76,6 +77,7 @@ function App() {
           <Route path="/login" component={Login} />
           <Route path="/settings" component={Settings} />
           <Route path="/subscriptions" component={Subscriptions} />
+          <Route path="/node" component={NodePage} />
           <Route default component={NotFound} />
         </Router>
       </div>

@@ -1,5 +1,8 @@
 import known from '../known-relays.json';
 
+export const REPO_URL = 'https://github.com/gurov/knigopis-p2p';
+export { known as KNOWN_RELAYS };
+
 // Номера kind Книгописи. Диапазон 30000–39999 — адресуемые события: relay хранит
 // последнюю версию на пару (автор, тег d). Номера свободны в реестре NIPs
 // на 2026-10; должны совпадать с relay/write-policy.py.
