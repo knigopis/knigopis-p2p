@@ -11,6 +11,9 @@ export default defineConfig({
     preact(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Регистрация — из src/main.tsx (virtual:pwa-register): только так страница
+      // сама перезагружается, когда подхватила новую версию.
+      injectRegister: false,
       manifest: {
         name: 'Книгопись',
         short_name: 'Книгопись',

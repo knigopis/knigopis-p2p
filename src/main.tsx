@@ -3,6 +3,7 @@ import { render } from 'preact';
 import { useEffect } from 'preact/hooks';
 import { LocationProvider, Route, Router, useLocation } from 'preact-iso';
 import { effect } from '@preact/signals';
+import { registerSW } from 'virtual:pwa-register';
 import { account } from './lib/account';
 import { loadMyFollows, myFollows } from './lib/follows';
 import { ensureProfiles } from './lib/profiles';
@@ -87,3 +88,8 @@ function App() {
 }
 
 render(<App />, document.getElementById('app')!);
+
+// Новая версия сайта применяется сразу: когда Service Worker скачал её, страница
+// перезагружается. Без этого после выкладки читатель видел старую версию до
+// второго обновления страницы.
+registerSW({ immediate: true });
