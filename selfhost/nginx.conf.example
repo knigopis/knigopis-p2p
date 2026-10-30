@@ -1,0 +1,51 @@
+# Узел Книгописи за уже работающим nginx: relay в Docker на 127.0.0.1:7777
+# (docker compose без профиля web), статика — каталог site/ из релиза.
+# Сертификат — как у остальных сайтов на сервере (certbot и т. п.).
+
+server {
+    listen 443 ssl http2;
+    server_name knigopis.example.org;
+
+    # ssl_certificate     /etc/letsencrypt/live/knigopis.example.org/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/knigopis.example.org/privkey.pem;
+
+    root /opt/knigopis/selfhost/site;
+
+    gzip on;
+    gzip_types application/json application/javascript text/css image/svg+xml;
+
+    # WebSocket и NIP-11 — на relay, остальное — SPA с запасным index.html.
+    location / {
+        error_page 418 = @relay;
+        if ($http_upgrade ~* ^websocket$) { return 418; }
+        if ($http_accept ~* application/nostr\+json) { return 418; }
+        try_files $uri /index.html;
+    }
+
+    # Архив не меняется; отсутствующий файл — честный 404.
+    location /legacy/ {
+        add_header Cache-Control "public, max-age=86400";
+        try_files $uri =404;
+    }
+
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    location = /sw.js {
+        add_header Cache-Control "no-cache";
+    }
+
+    location @relay {
+        proxy_pass http://127.0.0.1:7777;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        # Relay режет частоту по этому адресу.
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 1h;
+        proxy_send_timeout 1h;
+    }
+}

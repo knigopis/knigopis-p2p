@@ -2,7 +2,7 @@
 #
 # strfry собирается из исходников на закреплённом теге. Сборка долгая (C++ и
 # кодогенерация golpe), поэтому на маленьком сервере её не запускать: собрать
-# на своей машине (deploy/relay-image.sh) и привезти готовый образ.
+# на своей машине или скачать готовый образ из релиза (selfhost/update.sh).
 # Базовый образ и пакеты — как в Dockerfile самого strfry.
 
 FROM alpine:3.18 AS build
@@ -27,11 +27,11 @@ RUN apk --no-cache add lmdb flatbuffers libsecp256k1 libb2 zstd libressl python3
 WORKDIR /app
 COPY --from=build /build/strfry /app/strfry
 COPY strfry.conf /app/strfry.conf
-COPY write-policy.py /app/write-policy.py
+COPY write-policy.py run.sh /app/
 # Каталог базы создаётся заранее: именованный том Docker унаследует владельца.
-RUN chmod 755 /app/write-policy.py && mkdir /app/strfry-db && chown strfry:strfry /app/strfry-db
+RUN chmod 755 /app/write-policy.py /app/run.sh && mkdir /app/strfry-db && chown strfry:strfry /app/strfry-db
 
 USER strfry
 EXPOSE 7777
-ENTRYPOINT ["/app/strfry"]
-CMD ["relay"]
+# run.sh: relay + синхронизация с UPSTREAM; с аргументами — просто команда strfry.
+ENTRYPOINT ["/app/run.sh"]

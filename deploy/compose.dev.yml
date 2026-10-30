@@ -1,5 +1,6 @@
-# Для разработки: образ :dev и вторая копия relay на 7778 — «реплика»,
-# чтобы проверять работу с несколькими relay и отключение основного.
+# Для разработки, поверх selfhost/compose.yml (npm run relay): образ :dev и вторая
+# копия relay на 7778 — «реплика», которая раз в 30 секунд синхронизируется
+# с основным. Так проверяются и работа с несколькими relay, и синхронизация.
 #   VITE_RELAYS=ws://localhost:7777,ws://localhost:7778 npm run dev
 services:
   relay:
@@ -8,6 +9,9 @@ services:
   replica:
     image: knigopis-relay:dev
     restart: unless-stopped
+    environment:
+      UPSTREAM: ws://relay:7777
+      SYNC_INTERVAL: 30
     ports:
       - "127.0.0.1:7778:7777"
     volumes:

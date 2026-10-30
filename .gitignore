@@ -3,3 +3,6 @@ dist/
 .cache/
 # Генерируется scripts/pack-legacy.mjs из repo2.
 public/legacy/
+selfhost/.env
+selfhost/site/
+selfhost/site.new/

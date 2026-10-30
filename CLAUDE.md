@@ -55,7 +55,17 @@
   - требует тег `d` и название;
   - режет частоту по IP: ведро 3000 событий, +2 в секунду.
 
-  `maxFilterLimit = 5000`.
+  `maxFilterLimit = 5000`. Точка входа — `run.sh`: relay плюс, если задан `UPSTREAM`, `strfry sync --dir both`
+  с другими узлами раз в `SYNC_INTERVAL`. Синхронизация идёт в том же контейнере: LMDB проверяет читателей по PID.
+  С аргументами `run.sh` просто запускает команду strfry (`export`, `sync`…).
+- **Узлы:** все одинаковые — сайт и relay (`selfhost/`, инструкция — `selfhost/README.md`).
+  - Варианты: чистый сервер (профиль `web` = свой Caddy с HTTPS), уже есть nginx/Caddy (только relay; пример —
+    `selfhost/nginx.conf.example`), только статика.
+  - `selfhost/update.sh` скачивает из релиза сайт и образ relay и перезапускает узел — на сервере ничего не собирается.
+  - Клиент по умолчанию пишет на свой хост и все узлы из `src/known-relays.json`; новый узел добавляется туда PR.
+- **Релиз** (`npm run release -- vX.Y.Z`, только из чистого запушенного HEAD) — три файла: `knigopis-site.tar.gz`
+  (сайт с архивом), `knigopis-legacy.tar.gz`, `knigopis-relay-image-amd64.tar.gz`.
+  В сборке есть `404.html` (копия `index.html`) — для статических хостингов без SPA-маршрутов.
 
 ### События Nostr (номера выбраны, свободны в реестре NIPs на 2026-10)
 
@@ -79,24 +89,25 @@
 ```sh
 npm run legacy                         # клон repo2 во временный каталог вне проекта → public/legacy → клон удаляется (~1 мин)
 docker build -t knigopis-relay:dev relay   # образ relay (~5 мин, один раз)
-npm run relay                          # два локальных relay: 7777 (основной) и 7778 (реплика)
+npm run relay                          # два локальных relay: 7777 и 7778 (реплика, синхронизация раз в 30 с)
 VITE_RELAYS=ws://localhost:7777,ws://localhost:7778 npm run dev
 npm run e2e                            # сквозной тест в системном Chrome (пишет данные — только локально)
 npm run build                          # tsc + vite build → dist/
-deploy/relay-image.sh                  # собрать образ здесь, отвезти и запустить relay на сервере
+npm run release -- v0.2.0              # релиз на GitHub (сайт, архив, образ relay)
+deploy/relay-image.sh                  # собрать образ здесь, отвезти и запустить relay на bizibah
 deploy/publish.sh                      # сборка + rsync dist/ на сервер, потом dist/ удаляется
 deploy/apply-caddy.sh                  # блок deploy/knigopis.caddy → /etc/caddy/Caddyfile (validate, бэкап, reload)
 ```
 
-Новая реплика забирает всю историю с основного relay так:
-`docker run --rm --network <сеть> -v <том>:/app/strfry-db knigopis-relay:latest sync ws://relay:7777 --dir down`.
+Проверено локально (2026-10-30): два узла из `selfhost/` синхронизируются в обе стороны через WebSocket в Caddy;
+`nginx.conf.example` проходит `nginx -t`, маршруты и WebSocket работают.
 
 ## Хостинг демо: knigopis.bizibah.com
 
 - **Сервер** `root@bizibah.com` (165.227.139.115, DigitalOcean): Ubuntu 24.04, 1 vCPU, 1,9 ГБ RAM, Docker 24 / Compose v2.20,
   Caddy 2.11. На сервере много других сервисов; контейнеры слушают только `127.0.0.1`.
 - **Размещение:**
-  - relay — `/opt/knigopis/compose.yml`, контейнер `knigopis-relay-1`, том `knigopis_relay-data`, порт `127.0.0.1:7777`;
+  - relay — `/opt/knigopis/compose.yml` (= `selfhost/compose.yml` без профиля web), контейнер `knigopis-relay-1`, том `knigopis_relay-data`, порт `127.0.0.1:7777`;
   - статика — `/var/www/knigopis-site`;
   - блок Caddy дописан в конец `/etc/caddy/Caddyfile` между маркерами `# >>> knigopis` / `# <<< knigopis <<<`.
     Сниппеты `security` (без CSP) и `logs` — общие.
