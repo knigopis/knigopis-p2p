@@ -1,0 +1,19 @@
+# Для разработки: образ :dev и вторая копия relay на 7778 — «реплика»,
+# чтобы проверять работу с несколькими relay и отключение основного.
+#   VITE_RELAYS=ws://localhost:7777,ws://localhost:7778 npm run dev
+services:
+  relay:
+    image: knigopis-relay:dev
+
+  replica:
+    image: knigopis-relay:dev
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7778:7777"
+    volumes:
+      - replica-data:/app/strfry-db
+    ulimits:
+      nofile: 65536
+
+volumes:
+  replica-data:

@@ -1,0 +1,26 @@
+# Relay Книгописи. Порт открыт только на localhost — наружу его отдаёт Caddy
+# (deploy/knigopis.caddy) вместе со статикой на том же домене.
+#
+# Образ собирается из relay/Dockerfile. На маленьком сервере не собирать —
+# привезти готовый: deploy/relay-image.sh.
+name: knigopis
+
+services:
+  relay:
+    image: knigopis-relay:latest
+    build: ../relay
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7777:7777"
+    volumes:
+      - relay-data:/app/strfry-db
+    ulimits:
+      nofile: 65536
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  relay-data:

@@ -1,0 +1,46 @@
+import { defineConfig } from 'vite';
+import preact from '@preact/preset-vite';
+import { VitePWA } from 'vite-plugin-pwa';
+
+export default defineConfig({
+  server: {
+    // Архив — тысячи файлов, и он не меняется; следить за ним — зря тратить лимит inotify.
+    watch: { ignored: ['**/public/legacy/**', '**/dist/**', '**/.cache/**'] },
+  },
+  plugins: [
+    preact(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      manifest: {
+        name: 'Книгопись',
+        short_name: 'Книгопись',
+        description: 'Дневник читателя: список прочитанных книг',
+        lang: 'ru',
+        start_url: '/',
+        display: 'standalone',
+        theme_color: '#3a3f44',
+        background_color: '#ffffff',
+        icons: [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        // Архив (тысячи файлов, ~30 МБ) в предзагрузку не кладём —
+        // кешируем по мере просмотра.
+        globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+        globIgnores: ['legacy/**'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/legacy\//],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/legacy/'),
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'legacy', expiration: { maxEntries: 500 } },
+          },
+        ],
+      },
+    }),
+  ],
+});

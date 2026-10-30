@@ -1,0 +1,55 @@
+# >>> knigopis — блок целиком управляется deploy/apply-caddy.sh >>>
+# Прототип новой Книгописи: PWA и relay Nostr на одном домене.
+#
+#   /var/www/knigopis-site — собранная PWA и архив старой Книгописи
+#                            (deploy/publish.sh, rsync --delete).
+#   127.0.0.1:7777         — relay strfry в Docker (deploy/compose.yml).
+#
+# WebSocket и запросы NIP-11 (Accept: application/nostr+json) уходят на relay,
+# всё остальное — статика. Ключ при входе по QR-ссылке идёт после #, поэтому
+# в access.log не попадает.
+
+knigopis.bizibah.com {
+	import security
+	import logs
+
+	# Без учёта регистра: Node/undici шлёт «connection: upgrade» строчными,
+	# и привычный матчер header Connection *Upgrade* его пропускает.
+	@relay header_regexp Upgrade (?i)^websocket$
+	handle @relay {
+		reverse_proxy 127.0.0.1:7777 {
+			# Плагин relay режет частоту по этому адресу. Ставится, а не дописывается.
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	@nip11 header Accept application/nostr+json
+	handle @nip11 {
+		reverse_proxy 127.0.0.1:7777
+	}
+
+	# Архив не меняется; отсутствующий файл — честный 404, без подмены на index.html.
+	handle /legacy/* {
+		root * /var/www/knigopis-site
+		encode zstd gzip
+		header Cache-Control "public, max-age=86400"
+		file_server
+	}
+
+	handle {
+		root * /var/www/knigopis-site
+		encode zstd gzip
+		try_files {path} /index.html
+		file_server
+
+		# Имена js/css содержат хеш — не меняются никогда.
+		@immutable path /assets/*
+		header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+		# Точка входа и Service Worker обязаны перепроверяться, иначе обновление
+		# доходит до пользователя с опозданием.
+		@fresh path / /index.html /sw.js /registerSW.js /manifest.webmanifest
+		header @fresh Cache-Control "no-cache"
+	}
+}
+# <<< knigopis <<<

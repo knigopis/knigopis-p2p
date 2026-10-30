@@ -1,0 +1,1010 @@
+/*
+ * Книгопись. Вид — как у v1 (Bootstrap 3 + bootstrap-theme + css/main.css),
+ * но без Bootstrap и jQuery: повторены только нужные куски. Плюс адаптивность:
+ * меню-«гамбургер», годы на телефоне — лентой сверху, действия с книгой видны
+ * без наведения мыши.
+ */
+
+:root {
+  --text: #333;
+  --muted: #777;
+  --link: #337ab7;
+  --link-hover: #23527c;
+  --accent: #563d7c;
+  --border: #ddd;
+  --light: #eee;
+  --navbar-h: 50px;
+  --chips-h: 0px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.42857;
+  color: var(--text);
+  background: #fff;
+}
+
+a {
+  color: var(--link);
+  text-decoration: none;
+}
+a:hover,
+a:focus {
+  color: var(--link-hover);
+  text-decoration: underline;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: inherit;
+  font-weight: 500;
+  line-height: 1.1;
+  color: inherit;
+}
+h1 {
+  font-size: 36px;
+  margin: 20px 0 10px;
+}
+h3 {
+  font-size: 24px;
+  margin: 20px 0 10px;
+}
+h4 {
+  font-size: 18px;
+  margin: 10px 0;
+}
+p {
+  margin: 0 0 10px;
+}
+hr {
+  margin: 20px 0;
+  border: 0;
+  border-top: 1px solid var(--light);
+}
+small {
+  font-size: 85%;
+}
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+  top: -0.5em;
+}
+code {
+  padding: 2px 4px;
+  font-size: 90%;
+  color: #c7254e;
+  background: #f9f2f4;
+  border-radius: 4px;
+  word-break: break-all;
+}
+
+.text-muted {
+  color: var(--muted);
+}
+.text-center {
+  text-align: center;
+}
+.text-success {
+  color: #3c763d;
+}
+.text-danger {
+  color: #a94442;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+@media (min-width: 768px) {
+  .container {
+    max-width: 750px;
+  }
+}
+@media (min-width: 992px) {
+  .container {
+    max-width: 970px;
+  }
+}
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1170px;
+  }
+}
+
+.main-content {
+  min-height: 300px;
+}
+
+/* --- Шапка (v1: navbar-inverse + текстура) --- */
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  min-height: var(--navbar-h);
+  background: #3a3f44 url('/random_grey_variations.png') repeat;
+  border-bottom: 1px solid #080808;
+}
+.navbar .container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.navbar-brand {
+  display: block;
+  padding: 4px 15px 4px 0;
+}
+.navbar-brand img {
+  display: block;
+  width: 172px;
+  height: 42px;
+}
+.navbar-toggle {
+  display: none;
+  margin-left: auto;
+  padding: 9px 10px;
+  background: transparent;
+  border: 1px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.navbar-toggle:hover,
+.navbar-toggle:focus {
+  background: #333;
+}
+.navbar-toggle .icon-bar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+}
+.navbar-toggle .icon-bar + .icon-bar {
+  margin-top: 4px;
+}
+.navbar-menu {
+  display: flex;
+  flex: 1;
+  align-items: center;
+}
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.navbar-right {
+  margin-left: auto;
+}
+.navbar-nav > li {
+  position: relative;
+}
+.navbar-nav > li > a,
+.navbar-nav > li > button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 15px;
+  line-height: 20px;
+  color: #9d9d9d;
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.navbar-nav > li > a:hover,
+.navbar-nav > li > a:focus,
+.navbar-nav > li > button:hover,
+.navbar-nav > li > button:focus {
+  color: #fff;
+  text-decoration: none;
+}
+.navbar-nav > li > a.active {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+}
+.navbar .user-nickname {
+  font-weight: bold;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.caret {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-top: 4px solid;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 1000;
+  min-width: 180px;
+  margin: 2px 0 0;
+  padding: 5px 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+}
+.dropdown-menu a,
+.dropdown-menu button {
+  display: block;
+  width: 100%;
+  padding: 3px 20px;
+  color: #333;
+  white-space: nowrap;
+  text-align: left;
+  background: none;
+  border: 0;
+  font: inherit;
+  line-height: 1.42857;
+  cursor: pointer;
+}
+.dropdown-menu a:hover,
+.dropdown-menu button:hover {
+  color: #262626;
+  text-decoration: none;
+  background: linear-gradient(#f5f5f5, #e8e8e8);
+}
+.dropdown-menu .divider {
+  height: 1px;
+  margin: 9px 0;
+  background: #e5e5e5;
+}
+
+@media (max-width: 767px) {
+  .navbar-brand img {
+    width: 150px;
+    height: auto;
+  }
+  .navbar-toggle {
+    display: block;
+  }
+  .navbar-menu {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    margin: 0 -15px;
+    padding: 0 0 8px;
+    border-top: 1px solid #101010;
+  }
+  .navbar-menu.open {
+    display: flex;
+  }
+  .navbar-nav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .navbar-right {
+    margin-left: 0;
+  }
+  .navbar-nav > li > a,
+  .navbar-nav > li > button {
+    padding: 11px 15px;
+    width: 100%;
+  }
+  /* На телефоне пункты пользователя видны сразу, без выпадающего меню. */
+  .dropdown > button {
+    cursor: default;
+    color: #fff;
+  }
+  .dropdown > button .caret {
+    display: none;
+  }
+  .dropdown-menu {
+    position: static;
+    display: block;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+  .dropdown-menu a,
+  .dropdown-menu button {
+    padding: 11px 15px 11px 41px;
+    color: #9d9d9d;
+  }
+  .dropdown-menu a:hover,
+  .dropdown-menu button:hover {
+    color: #fff;
+    background: none;
+  }
+  .dropdown-menu .divider {
+    display: none;
+  }
+}
+
+/* --- Jumbotron и преимущества --- */
+
+.jumbotron {
+  margin: 15px 0 30px;
+  padding: 48px 60px;
+  text-align: center;
+  background: var(--light);
+  border-radius: 6px;
+}
+.jumbotron h1 {
+  margin-top: 0;
+  font-size: 63px;
+}
+.jumbotron p {
+  margin-bottom: 15px;
+  font-size: 21px;
+  font-weight: 200;
+}
+.jumbotron .actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0 0;
+}
+@media (max-width: 767px) {
+  .jumbotron {
+    padding: 24px 16px;
+  }
+  .jumbotron h1 {
+    font-size: 34px;
+  }
+  .jumbotron p {
+    font-size: 17px;
+  }
+  .jumbotron .actions .btn {
+    flex: 1 1 100%;
+    white-space: normal;
+  }
+}
+
+.features {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 30px;
+  text-align: center;
+}
+@media (min-width: 768px) {
+  .features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 992px) {
+  .features {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.features h4 {
+  margin-top: 20px;
+}
+
+.list-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+.home-section {
+  margin-top: 30px;
+}
+.latest-books {
+  padding-left: 20px;
+}
+.latest-books li {
+  margin-bottom: 4px;
+}
+
+/* --- Кнопки (bootstrap-theme: градиенты) --- */
+
+.btn {
+  display: inline-block;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.42857;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  text-shadow: 0 1px 0 #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 1px 1px rgba(0, 0, 0, 0.075);
+}
+.btn:hover,
+.btn:focus {
+  text-decoration: none;
+}
+.btn:active {
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+}
+.btn[disabled] {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.btn-default {
+  color: #333;
+  background: linear-gradient(#fff, #e0e0e0);
+  border-color: #ccc;
+}
+.btn-default:hover,
+.btn-default:focus {
+  color: #333;
+  background: #e0e0e0;
+  border-color: #adadad;
+}
+.btn-primary,
+.btn-danger,
+.btn-success {
+  color: #fff;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+.btn-primary {
+  background: linear-gradient(#337ab7, #265a88);
+  border-color: #245580;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  color: #fff;
+  background: #265a88;
+}
+.btn-danger {
+  background: linear-gradient(#d9534f, #c12e2a);
+  border-color: #b92c28;
+}
+.btn-danger:hover,
+.btn-danger:focus {
+  color: #fff;
+  background: #c12e2a;
+}
+.btn-success {
+  background: linear-gradient(#5cb85c, #419641);
+  border-color: #3e8f3e;
+}
+.btn-success:hover,
+.btn-success:focus {
+  color: #fff;
+  background: #419641;
+}
+.btn-lg {
+  padding: 10px 16px;
+  font-size: 18px;
+  line-height: 1.3333;
+  border-radius: 6px;
+}
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 3px;
+}
+.btn-xs {
+  padding: 1px 5px;
+  font-size: 12px;
+  border-radius: 3px;
+}
+.btn-link {
+  padding: 0;
+  color: var(--link);
+  background: none;
+  border: 0;
+  box-shadow: none;
+  font: inherit;
+  cursor: pointer;
+  text-shadow: none;
+}
+.btn-link:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
+}
+
+/* --- Формы --- */
+
+.form-group {
+  margin-bottom: 15px;
+}
+label {
+  display: inline-block;
+  max-width: 100%;
+  margin-bottom: 5px;
+  font-weight: 700;
+}
+.form-control {
+  display: block;
+  width: 100%;
+  height: 34px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.42857;
+  color: #555;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  transition:
+    border-color ease-in-out 0.15s,
+    box-shadow ease-in-out 0.15s;
+}
+.form-control:focus {
+  border-color: #66afe9;
+  outline: 0;
+  box-shadow:
+    inset 0 1px 1px rgba(0, 0, 0, 0.075),
+    0 0 8px rgba(102, 175, 233, 0.6);
+}
+textarea.form-control {
+  height: auto;
+  min-height: 120px;
+  resize: vertical;
+}
+.help-block {
+  display: block;
+  margin: 5px 0 10px;
+  color: #737373;
+}
+.checkbox {
+  display: block;
+  margin: 10px 0;
+}
+.checkbox label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: normal;
+  cursor: pointer;
+}
+.date-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 110px));
+  gap: 8px;
+}
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.form-actions .push-right {
+  margin-left: auto;
+}
+.inline-form {
+  display: flex;
+  gap: 8px;
+}
+.inline-form .form-control {
+  flex: 1;
+}
+.form-narrow {
+  max-width: 600px;
+}
+.private-text-info {
+  color: #999;
+}
+@media (max-width: 767px) {
+  /* 16px — чтобы iOS не увеличивал страницу при фокусе. */
+  .form-control {
+    height: 40px;
+    font-size: 16px;
+  }
+  .date-inputs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .form-actions .btn {
+    flex: 1 1 100%;
+    white-space: normal;
+  }
+  .form-actions .push-right {
+    margin-left: 0;
+  }
+}
+
+/* --- Сообщения, панели, прогресс --- */
+
+.alert {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+.alert > :last-child {
+  margin-bottom: 0;
+}
+.alert-success {
+  color: #3c763d;
+  background: linear-gradient(#dff0d8, #c8e5bc);
+  border-color: #b2dba1;
+}
+.alert-info {
+  color: #31708f;
+  background: linear-gradient(#d9edf7, #b9def0);
+  border-color: #9acfea;
+}
+.alert-warning {
+  color: #8a6d3b;
+  background: linear-gradient(#fcf8e3, #f8efc0);
+  border-color: #f5e79e;
+}
+.alert-danger {
+  color: #a94442;
+  background: linear-gradient(#f2dede, #e7c3c3);
+  border-color: #dca7a7;
+}
+.alert a {
+  font-weight: bold;
+}
+
+.panel {
+  margin-bottom: 20px;
+  padding: 15px 20px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.panel > h3:first-child {
+  margin-top: 0;
+}
+.panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 30px;
+}
+@media (min-width: 992px) {
+  .panels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.progress {
+  height: 20px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  background: linear-gradient(#ebebeb, #f5f5f5);
+  border-radius: 4px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+.progress-bar {
+  height: 100%;
+  font-size: 12px;
+  line-height: 20px;
+  color: #fff;
+  text-align: center;
+  background: linear-gradient(#337ab7, #286090);
+  transition: width 0.2s ease;
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.loading {
+  margin: 20px 0;
+  color: var(--muted);
+}
+
+.label-archive {
+  display: inline-block;
+  padding: 0.2em 0.6em;
+  font-size: 50%;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  vertical-align: middle;
+  background: #777;
+  border-radius: 0.25em;
+}
+
+.avatar {
+  flex: none;
+  vertical-align: middle;
+  border-radius: 3px;
+}
+
+.qr {
+  width: 260px;
+  max-width: 100%;
+  margin: 10px 0;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid var(--border);
+}
+.qr svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.secret {
+  display: block;
+  margin: 10px 0;
+  padding: 9px;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 13px;
+  word-break: break-all;
+  background: #f5f5f5;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.result-list {
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+.result-list li {
+  padding: 7px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* --- Заголовок страницы пользователя, вкладки --- */
+
+.page-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+.page-title h1 {
+  margin-right: 4px;
+}
+.subscribe-btn {
+  padding: 0 4px;
+  font-size: 26px;
+  line-height: 1;
+  color: #f0ad4e;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.subscribe-btn:hover {
+  color: #ec971f;
+}
+.page-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+@media (max-width: 767px) {
+  h1 {
+    font-size: 26px;
+  }
+  .page-tools .btn {
+    flex: 1 1 auto;
+    white-space: normal;
+  }
+}
+
+.nav-tabs {
+  display: flex;
+  margin: 0 0 20px;
+  padding: 0;
+  overflow-x: auto;
+  list-style: none;
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: none;
+}
+.nav-tabs a {
+  display: block;
+  margin-bottom: -1px;
+  padding: 10px 15px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  border-radius: 4px 4px 0 0;
+}
+.nav-tabs a:hover {
+  text-decoration: none;
+  background: var(--light);
+  border-color: var(--light) var(--light) var(--border);
+}
+.nav-tabs a.active {
+  color: #555;
+  cursor: default;
+  background: #fff;
+  border-color: var(--border) var(--border) transparent;
+}
+
+/* --- Список книг по годам --- */
+
+.books-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 30px;
+}
+@media (min-width: 992px) {
+  .books-layout.has-nav {
+    grid-template-columns: minmax(0, 1fr) 170px;
+  }
+}
+.book-group {
+  margin-bottom: 40px;
+}
+.book-group h3 {
+  scroll-margin-top: calc(var(--navbar-h) + var(--chips-h) + 15px);
+}
+.books-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.books-list > li {
+  margin-bottom: 20px;
+}
+.book-title {
+  font-weight: 700;
+}
+.book-actions {
+  font-size: 80%;
+  font-weight: normal;
+}
+/* Отступ справа, а не слева: при переносе строки ссылка не уезжает от края. */
+.book-actions a {
+  margin-right: 6px;
+  white-space: nowrap;
+}
+.notes {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+/* Действия появляются при наведении — только там, где есть мышь.
+   В v1 они прятались всегда, и на телефоне до них было не добраться. */
+@media (hover: hover) and (pointer: fine) {
+  .books-list > li .book-actions {
+    visibility: hidden;
+  }
+  .books-list > li:hover .book-actions,
+  .books-list > li:focus-within .book-actions {
+    visibility: visible;
+  }
+}
+@media (hover: none) {
+  .book-actions a {
+    display: inline-block;
+    padding: 4px 0;
+  }
+}
+
+/* Оглавление по годам. В v1 было position: fixed — длинный список не
+   прокручивался и наезжал на подвал; здесь sticky со своей прокруткой. */
+.year-nav {
+  position: sticky;
+  top: calc(var(--navbar-h) + 15px);
+  align-self: start;
+  max-height: calc(100vh - var(--navbar-h) - 30px);
+  overflow-y: auto;
+}
+.year-nav h3 {
+  margin-top: 0;
+}
+.sidenav-years {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sidenav-years a {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0 2px 13px;
+  font-size: 90%;
+  color: #767676;
+  border-left: 2px solid transparent;
+}
+.sidenav-years a:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+.sidenav-years a.active {
+  font-weight: 700;
+  color: var(--accent);
+  border-left-color: var(--accent);
+}
+.year-chips {
+  display: none;
+}
+@media (max-width: 991px) {
+  :root {
+    --chips-h: 46px;
+  }
+  .year-nav {
+    display: none;
+  }
+  .year-chips {
+    position: sticky;
+    top: var(--navbar-h);
+    z-index: 5;
+    display: flex;
+    gap: 6px;
+    margin: 0 -15px 10px;
+    padding: 8px 15px;
+    overflow-x: auto;
+    background: #fff;
+    border-bottom: 1px solid var(--light);
+    scrollbar-width: none;
+  }
+  .year-chips a {
+    flex: none;
+    padding: 4px 10px;
+    font-size: 13px;
+    color: #555;
+    white-space: nowrap;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .year-chips a:hover {
+    text-decoration: none;
+  }
+  .year-chips a.active {
+    font-weight: 700;
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+}
+
+/* --- Подвал --- */
+
+footer {
+  padding-bottom: 30px;
+  color: #555;
+}
+footer h4 {
+  margin-top: 0;
+}
+
+@media print {
+  .navbar,
+  .year-nav,
+  .year-chips,
+  .book-actions,
+  .page-tools {
+    display: none !important;
+  }
+}
