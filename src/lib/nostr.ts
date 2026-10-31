@@ -8,19 +8,63 @@ import { defaultRelays } from './config';
 
 const RELAYS_KEY = 'knigopis.relays';
 
-function loadRelays(): string[] {
+// В хранилище — не весь список, а только правки пользователя к списку по умолчанию.
+// Тогда новые узлы из релизов доходят до всех, а убранные из known-relays.json
+// пропадают у всех, кроме тех, кто добавил их сам.
+type RelayEdits = { added: string[]; removed: string[] };
+
+function norm(url: string): string {
   try {
-    const saved = JSON.parse(localStorage.getItem(RELAYS_KEY) ?? 'null');
-    if (Array.isArray(saved) && saved.length) return saved;
-  } catch {}
-  return defaultRelays();
+    return normalizeURL(url);
+  } catch {
+    return url;
+  }
 }
 
-export const relays = signal<string[]>(loadRelays());
+// Адреса из list, которых нет в other, без повторов.
+function without(list: string[], other: string[]): string[] {
+  const skip = new Set(other.map(norm));
+  return list.filter((url) => {
+    const key = norm(url);
+    if (skip.has(key)) return false;
+    skip.add(key);
+    return true;
+  });
+}
+
+function applyEdits(edits: RelayEdits): string[] {
+  const kept = without(defaultRelays(), edits.removed);
+  const list = [...kept, ...without(edits.added, kept)];
+  return list.length ? list : defaultRelays();
+}
+
+function saveEdits(edits: RelayEdits) {
+  if (edits.added.length || edits.removed.length) localStorage.setItem(RELAYS_KEY, JSON.stringify(edits));
+  else localStorage.removeItem(RELAYS_KEY);
+}
+
+function loadEdits(): RelayEdits {
+  try {
+    const saved = JSON.parse(localStorage.getItem(RELAYS_KEY) ?? 'null');
+    if (Array.isArray(saved)) {
+      // Раньше хранился весь список. Что из него убрано сознательно, а чего просто не было
+      // в тогдашнем списке по умолчанию, не различить, поэтому переносим только добавленное.
+      const edits = { added: without(saved, defaultRelays()), removed: [] };
+      saveEdits(edits);
+      return edits;
+    }
+    if (Array.isArray(saved?.added) && Array.isArray(saved?.removed)) return saved;
+  } catch {}
+  return { added: [], removed: [] };
+}
+
+export const relays = signal<string[]>(applyEdits(loadEdits()));
 
 export function setRelays(list: string[]) {
-  relays.value = list;
-  localStorage.setItem(RELAYS_KEY, JSON.stringify(list));
+  const defaults = defaultRelays();
+  const edits = { added: without(list, defaults), removed: without(defaults, list) };
+  saveEdits(edits);
+  relays.value = applyEdits(edits);
 }
 
 export function resetRelays() {

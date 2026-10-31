@@ -6,6 +6,8 @@ export function NodePage() {
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const here = `${proto}//${location.host}`;
   const readme = `${REPO_URL}/blob/master/selfhost/README.md`;
+  // Синхронизация двусторонняя: новый узел, связанный со всеми известными, замыкает сетку сам.
+  const upstream = (KNOWN_RELAYS.length ? KNOWN_RELAYS : [here]).join(' ');
 
   return (
     <div class="form-narrow">
@@ -33,11 +35,16 @@ cp .env.example .env
         </code>
       </pre>
       <p>
-        В файле <code>.env</code> укажите свой домен (<code>DOMAIN</code>) и узел, с которым синхронизироваться:
+        В файле <code>.env</code> укажите свой домен (<code>DOMAIN</code>) и узлы, с которыми синхронизироваться, — все
+        известные, через пробел:
       </p>
       <pre>
-        <code>{`UPSTREAM=${here}`}</code>
+        <code>{`UPSTREAM=${upstream}`}</code>
       </pre>
+      <p>
+        Тогда исчезновение любого узла не прервёт обмен записями между остальными. На других узлах ничего менять не
+        нужно: синхронизация идёт в обе стороны.
+      </p>
       <p>
         <code>update.sh</code> скачает готовый сайт и relay из релиза и запустит их; сертификат HTTPS получится сам. Если
         на сервере уже работает nginx или Caddy, в инструкции есть готовый конфиг для него.
