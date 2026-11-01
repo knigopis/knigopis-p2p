@@ -1,0 +1,18 @@
+# Caddy узла за nginx-proxy (compose.nginx-proxy.yml). HTTPS делает nginx-proxy,
+# сюда запросы приходят по HTTP из сети Docker. Адрес клиента nginx-proxy ставит
+# в X-Real-IP сам, затирая присланный. Верим этому заголовку только с частных адресов
+# (сети Docker): по нему relay режет частоту записи.
+{
+	servers {
+		trusted_proxies static private_ranges
+		client_ip_headers X-Real-IP
+	}
+}
+
+import site.caddy
+
+# Остальные адреса (REDIRECT_FROM в .env) — на основной. Старые ссылки вида
+# knigopis.com/#/… тоже доходят: часть после # браузер при редиректе сохраняет.
+:80 {
+	redir https://{$MAIN_HOST}{uri} permanent
+}

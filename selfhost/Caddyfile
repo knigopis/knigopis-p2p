@@ -1,5 +1,6 @@
 # Узел Книгописи: сайт и relay на одном домене. Домен — из DOMAIN в .env;
-# сертификат Caddy получит сам.
+# сертификат Caddy получит сам. За nginx-proxy этот файл подключается
+# из Caddyfile.nginx-proxy, а DOMAIN внутри контейнера — «http://<адрес>», без TLS.
 #
 # WebSocket и запросы NIP-11 (Accept: application/nostr+json) уходят на relay,
 # всё остальное — статика из ./site.
@@ -13,7 +14,9 @@
 	handle @relay {
 		reverse_proxy relay:7777 {
 			# Relay режет частоту по этому адресу.
-			header_up X-Real-IP {remote_host}
+			# client_ip — адрес соединения, а за доверенным прокси (Caddyfile.nginx-proxy) —
+			# адрес клиента, который прислал прокси.
+			header_up X-Real-IP {client_ip}
 		}
 	}
 

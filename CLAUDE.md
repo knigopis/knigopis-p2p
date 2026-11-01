@@ -34,6 +34,9 @@
 - **`auth.csv` — bcrypt-хэши паролей локальных аккаунтов в открытом доступе.** Упаковка архива его не читает.
 - На 2026-10-30: 4276 пользователей, 31 077 книг, 6169 желаний; ≥100 пользователей с подписками.
 - Старый адрес профиля: `/#/<ник>/books?u=<userId>&y=<год>`. PWA перенаправляет его на `/archive/<userId>` (`src/main.tsx`).
+- Основной адрес старого сайта — **`www.knigopis.com`** (корень перенаправляет на www). Новый сайт ставится сразу
+  туда, без промежуточного поддомена: смена адреса разлогинивает всех (ключ привязан к origin).
+  В `known-relays.json` — `wss://www.knigopis.com`: WebSocket по редиректу не переходит.
 
 ## Устройство прототипа
 
@@ -64,7 +67,8 @@
   С аргументами `run.sh` просто запускает команду strfry (`export`, `sync`…).
 - **Узлы:** все одинаковые — сайт и relay (`selfhost/`, инструкция — `selfhost/README.md`).
   - Варианты: чистый сервер (профиль `web` = свой Caddy с HTTPS), уже есть nginx/Caddy (только relay; пример —
-    `selfhost/nginx.conf.example`), только статика.
+    `selfhost/nginx.conf.example`), за nginx-proxy + acme-companion (`compose.nginx-proxy.yml` через `COMPOSE_FILE`
+    в `.env`: Caddy без TLS; `DOMAIN` — основной адрес, `REDIRECT_FROM` — перенаправляемые на него), только статика.
   - `selfhost/update.sh` скачивает из релиза сайт и образ relay и перезапускает узел — на сервере ничего не собирается.
   - Клиент по умолчанию пишет на свой хост и все узлы из `src/known-relays.json`; новый узел добавляется туда PR.
   - Синхронизация — сеткой без центра: в `UPSTREAM` нового узла все узлы из `known-relays.json`. Sync двусторонний,
@@ -135,6 +139,9 @@ deploy/apply-caddy.sh                  # блок deploy/knigopis.caddy → /etc
 
 - **Caddy:** матчер `header Connection *Upgrade*` чувствителен к регистру — Node/undici шлёт `connection: upgrade`
   и получал index.html. Используется `header_regexp Upgrade (?i)^websocket$`.
+- **Caddy за прокси** обязан передавать relay адрес клиента: `header_up X-Real-IP {client_ip}` плюс `trusted_proxies`
+  (`Caddyfile.nginx-proxy`). С `{remote_host}` relay видит всех с адреса прокси и режет частоту записи всем разом
+  (проверено с nginx-proxy 2026-11-01).
 - **Compose v2.20 на сервере** не понимает `docker compose ps --format`.
 - **Остановка процессов:**
   - `pkill -f <шаблон>` в Bash-команде убивает и саму оболочку (шаблон есть в её командной строке). Останавливать по PID.
