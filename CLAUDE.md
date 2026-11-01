@@ -65,6 +65,10 @@
   `maxFilterLimit = 5000`. Точка входа — `run.sh`: relay плюс, если задан `UPSTREAM`, `strfry sync --dir both`
   с другими узлами раз в `SYNC_INTERVAL`. Синхронизация идёт в том же контейнере: LMDB проверяет читателей по PID.
   С аргументами `run.sh` просто запускает команду strfry (`export`, `sync`…).
+- **Главный узел (www.knigopis.com)** разворачивается как остальные проекты Ромы за nginx-proxy:
+  `./release.sh` = `git pull && docker-compose -p knigopis -f deployments/docker-compose.prod.yml up -d --build`.
+  Всё собирается на сервере: `build/Dockerfile` — сайт, архив (клон repo2 внутри сборки) и Caddy из
+  `selfhost/Caddyfile*`; relay — `relay/Dockerfile`. Домены и `UPSTREAM` прописаны в compose. Локально — `make up` (:8080).
 - **Узлы:** все одинаковые — сайт и relay (`selfhost/`, инструкция — `selfhost/README.md`).
   - Варианты: чистый сервер (профиль `web` = свой Caddy с HTTPS), уже есть nginx/Caddy (только relay; пример —
     `selfhost/nginx.conf.example`), за nginx-proxy + acme-companion (`compose.nginx-proxy.yml` через `COMPOSE_FILE`
@@ -101,6 +105,8 @@
 ## Команды
 
 ```sh
+./release.sh                           # на сервере главного узла: git pull + docker-compose up --build
+make up                                # тот же узел локально на http://localhost:8080 (make stop)
 npm run legacy                         # клон repo2 во временный каталог вне проекта → public/legacy → клон удаляется (~1 мин)
 docker build -t knigopis-relay:dev relay   # образ relay (~5 мин, один раз)
 npm run relay                          # два локальных relay: 7777 и 7778 (реплика, синхронизация раз в 30 с)

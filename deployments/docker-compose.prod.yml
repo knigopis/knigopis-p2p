@@ -1,0 +1,54 @@
+# Главный узел Книгописи за nginx-proxy + acme-companion.
+# Запуск и обновление — ./release.sh в корне (git pull + docker-compose up --build).
+version: '3.5'
+
+services:
+  # strfry: здесь хранятся записи читателей. Наружу не торчит — к нему ходит web.
+  relay:
+    build: ./../relay
+    image: knigopis-relay:latest
+    restart: always
+    environment:
+      # Узлы для двусторонней синхронизации, через пробел (все из src/known-relays.json).
+      UPSTREAM: "wss://knigopis.bizibah.com"
+      SYNC_INTERVAL: "600"
+    volumes:
+      - relay-data:/app/strfry-db
+    ulimits:
+      nofile: 65536
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+
+  # Сайт + разводка запросов на relay (build/Dockerfile).
+  web:
+    build:
+      context: ./../
+      dockerfile: ./build/Dockerfile
+    container_name: knigopis
+    depends_on:
+      - relay
+    restart: always
+    environment:
+      # Основной адрес. Менять нельзя: ключи читателей привязаны к адресу сайта.
+      DOMAIN: "http://www.knigopis.com"
+      MAIN_HOST: "www.knigopis.com"
+      # knigopis.com перенаправляется на www (Caddyfile.nginx-proxy).
+      VIRTUAL_HOST: "www.knigopis.com,knigopis.com"
+      VIRTUAL_PORT: "80"
+      LETSENCRYPT_HOST: "www.knigopis.com,knigopis.com"
+    networks:
+      - default
+      - nginx-proxy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+
+volumes:
+  relay-data:
+
+networks:
+  nginx-proxy:
+    external: true

@@ -12,6 +12,22 @@
 Готовый образ relay — только под amd64. На ARM (Raspberry Pi и т. п.) соберите сами: `docker compose build relay`.
 Это компиляция strfry, 10–30 минут.
 
+## Главный узел (www.knigopis.com): git pull + docker-compose
+
+Главный узел собирается на сервере из исходников, без релизов и `update.sh` — как остальные проекты за nginx-proxy.
+Файлы в корне репозитория: `build/Dockerfile` (сайт + архив + Caddy), `deployments/docker-compose.prod.yml`
+(relay и web, домены и `UPSTREAM` прописаны в нём), `release.sh`.
+
+```sh
+git clone https://github.com/gurov/knigopis-p2p.git /opt/knigopis
+cd /opt/knigopis
+./release.sh        # git pull && docker-compose -p knigopis -f deployments/docker-compose.prod.yml up -d --build
+```
+
+Нужна внешняя сеть `nginx-proxy` с nginx-proxy и acme-companion. Первая сборка relay (компиляция strfry) — 10–30 минут,
+сайта с архивом — пара минут; дальше пересобирается только изменившееся. Локально то же самое — `make up`
+(http://localhost:8080). Записи лежат в томе `knigopis_relay-data`.
+
 ## Вариант 1. Чистый сервер — всё в Docker, HTTPS сам
 
 ```sh
