@@ -13,8 +13,9 @@
   **На 2026-10-30 api.knigopis.com отвечает 502** — старый сайт не показывает данные.
 - Цель: прототип показать Роме, потом Рома поднимает всё у себя на VPS. Поэтому деплой должен легко переноситься
   (Docker Compose + блок для Caddy, без привязки к bizibah).
-  Инструкция для Ромы (установка за nginx, проверка, переезд на knigopis.com) — артефакт
-  https://claude.ai/artifact/DnVgcWpV1qBk4HQEZj2zBp. Исходник — `.cache/roma-instructions.html`, не в git.
+  Инструкция для Ромы (узел за nginx-proxy сразу на www.knigopis.com, проверка, обслуживание) — артефакт
+  https://claude.ai/artifact/DnVgcWpV1qBk4HQEZj2zBp (UUID для инструментов — `6787cf61-51fa-449c-a614-9bdcedb65eff`,
+  виден только владельцу). Исходник — `.cache/roma-instructions.html`, не в git; публиковать из него.
   Команды в нём повторяют `selfhost/README.md`.
 - Репозитории (организация `knigopis` на GitHub):
   - `www.knigopis.com` — старый фронт v1, GitHub Pages;
@@ -125,6 +126,11 @@ deploy/apply-caddy.sh                  # блок deploy/knigopis.caddy → /etc
 
 Проверено локально (2026-10-30): два узла из `selfhost/` синхронизируются в обе стороны через WebSocket в Caddy;
 `nginx.conf.example` проходит `nginx -t`, маршруты и WebSocket работают.
+Проверено локально (2026-11-01): вариант за nginx-proxy — маршруты, WebSocket, NIP-11, редирект корня на www,
+relay видит IP клиента. Выдача сертификата acme-companion не проверялась.
+
+Модули `src/lib` можно проверять без входа и UI: на dev-сервере в Playwright
+`page.evaluate(() => import('/src/lib/nostr.ts'))` отдаёт тот же экземпляр модуля, что у приложения.
 
 ## Хостинг демо: knigopis.bizibah.com
 
