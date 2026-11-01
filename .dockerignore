@@ -1,0 +1,9 @@
+.git
+node_modules
+dist
+.cache
+public/legacy
+selfhost/.env
+selfhost/site
+selfhost/site.new
+deployments
