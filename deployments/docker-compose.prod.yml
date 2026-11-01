@@ -1,12 +1,12 @@
 # Главный узел Книгописи за nginx-proxy + acme-companion.
-# Запуск и обновление — ./release.sh в корне (git pull + docker-compose up --build).
+# Образы собирает GitHub Actions (.github/workflows/docker.yml) и кладёт в ghcr.io,
+# на сервере ничего не собирается. Запуск и обновление — ./release.sh в корне.
 version: '3.5'
 
 services:
   # strfry: здесь хранятся записи читателей. Наружу не торчит — к нему ходит web.
   relay:
-    build: ./../relay
-    image: knigopis-relay:latest
+    image: ghcr.io/gurov/knigopis-p2p/relay:latest
     restart: always
     environment:
       # Узлы для двусторонней синхронизации, через пробел (все из src/known-relays.json).
@@ -23,9 +23,7 @@ services:
 
   # Сайт + разводка запросов на relay (build/Dockerfile).
   web:
-    build:
-      context: ./../
-      dockerfile: ./build/Dockerfile
+    image: ghcr.io/gurov/knigopis-p2p/web:latest
     container_name: knigopis
     depends_on:
       - relay

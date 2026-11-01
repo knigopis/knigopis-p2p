@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
-# Обновить главный узел на сервере: свежий код и пересборка изменившихся образов.
-# Первая сборка relay (компиляция strfry) — 10–30 минут, дальше — из кеша Docker.
+# Обновить главный узел на сервере: свежий compose, готовые образы из ghcr.io
+# (их собирает GitHub Actions после push в master), перезапуск изменившихся контейнеров.
 set -e
 cd "$(dirname "$0")"
-git pull && docker-compose -p knigopis -f deployments/docker-compose.prod.yml up -d --build
+compose="docker-compose -p knigopis -f deployments/docker-compose.prod.yml"
+git pull
+$compose pull
+$compose up -d
+# Старые версии образов — в мусор, иначе диск кончается.
+docker image prune -f
