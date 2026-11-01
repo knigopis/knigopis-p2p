@@ -66,9 +66,13 @@
   с другими узлами раз в `SYNC_INTERVAL`. Синхронизация идёт в том же контейнере: LMDB проверяет читателей по PID.
   С аргументами `run.sh` просто запускает команду strfry (`export`, `sync`…).
 - **Главный узел (www.knigopis.com)** разворачивается как остальные проекты Ромы за nginx-proxy:
-  `./release.sh` = `git pull && docker-compose -p knigopis -f deployments/docker-compose.prod.yml up -d --build`.
-  Всё собирается на сервере: `build/Dockerfile` — сайт, архив (клон repo2 внутри сборки) и Caddy из
-  `selfhost/Caddyfile*`; relay — `relay/Dockerfile`. Домены и `UPSTREAM` прописаны в compose. Локально — `make up` (:8080).
+  `./release.sh` = `git pull` + `docker-compose -p knigopis -f deployments/docker-compose.prod.yml pull && up -d` + `docker image prune`.
+  На сервере ничего не собирается (сборка съела диск): образы собирает GitHub Actions (`.github/workflows/docker.yml`)
+  после push в `master` → `ghcr.io/gurov/knigopis-p2p/{relay,web}:latest`; на PR — только проверочная сборка.
+  Образы приватные, на сервере нужен `docker login ghcr.io` (токен с `read:packages`).
+  `build/Dockerfile` — сайт, архив (клон repo2 внутри сборки) и Caddy из `selfhost/Caddyfile*`; relay — `relay/Dockerfile`.
+  Домены и `UPSTREAM` прописаны в compose. Локально — `make up` (:8080, собирает образы — тяжело).
+  На проде Docker был 19.03 — Alpine 3.14+ на нём не работает (seccomp режет `faccessat2`), нужен Docker 20.10+.
 - **Узлы:** все одинаковые — сайт и relay (`selfhost/`, инструкция — `selfhost/README.md`).
   - Варианты: чистый сервер (профиль `web` = свой Caddy с HTTPS), уже есть nginx/Caddy (только relay; пример —
     `selfhost/nginx.conf.example`), за nginx-proxy + acme-companion (`compose.nginx-proxy.yml` через `COMPOSE_FILE`
@@ -105,7 +109,7 @@
 ## Команды
 
 ```sh
-./release.sh                           # на сервере главного узла: git pull + docker-compose up --build
+./release.sh                           # на сервере главного узла: git pull + docker-compose pull + up -d
 make up                                # тот же узел локально на http://localhost:8080 (make stop)
 npm run legacy                         # клон repo2 во временный каталог вне проекта → public/legacy → клон удаляется (~1 мин)
 docker build -t knigopis-relay:dev relay   # образ relay (~5 мин, один раз)

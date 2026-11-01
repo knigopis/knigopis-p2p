@@ -14,19 +14,22 @@
 
 ## Главный узел (www.knigopis.com): git pull + docker-compose
 
-Главный узел собирается на сервере из исходников, без релизов и `update.sh` — как остальные проекты за nginx-proxy.
-Файлы в корне репозитория: `build/Dockerfile` (сайт + архив + Caddy), `deployments/docker-compose.prod.yml`
-(relay и web, домены и `UPSTREAM` прописаны в нём), `release.sh`.
+Главный узел обновляется как остальные проекты за nginx-proxy, но на сервере ничего не собирается:
+образы `relay` и `web` собирает GitHub Actions (`.github/workflows/docker.yml`) после каждого push в `master`
+и кладёт в `ghcr.io/gurov/knigopis-p2p/{relay,web}:latest`. `deployments/docker-compose.prod.yml` — relay и web,
+домены и `UPSTREAM` прописаны в нём.
 
 ```sh
 git clone https://github.com/gurov/knigopis-p2p.git /opt/knigopis
 cd /opt/knigopis
-./release.sh        # git pull && docker-compose -p knigopis -f deployments/docker-compose.prod.yml up -d --build
+# Репозиторий приватный, значит и образы тоже: один раз войти токеном GitHub с правом read:packages.
+echo <токен> | docker login ghcr.io -u <логин GitHub> --password-stdin
+./release.sh        # git pull, docker-compose pull, up -d, docker image prune
 ```
 
-Нужна внешняя сеть `nginx-proxy` с nginx-proxy и acme-companion. Первая сборка relay (компиляция strfry) — 10–30 минут,
-сайта с архивом — пара минут; дальше пересобирается только изменившееся. Локально то же самое — `make up`
-(http://localhost:8080). Записи лежат в томе `knigopis_relay-data`.
+Нужна внешняя сеть `nginx-proxy` с nginx-proxy и acme-companion. Перед `./release.sh` дождитесь зелёной сборки
+в Actions. Записи лежат в томе `knigopis_relay-data`. Собрать те же образы у себя — `make up` (http://localhost:8080);
+это компиляция strfry, 10–30 минут.
 
 ## Вариант 1. Чистый сервер — всё в Docker, HTTPS сам
 
