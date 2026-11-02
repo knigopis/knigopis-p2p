@@ -1,7 +1,7 @@
 # knigopis-p2p
 
 Переделка knigopis.com (список прочитанных книг) так, чтобы сайт не зависел от одного хостинга и сторонних входов.
-Статус: **прототип работает на https://knigopis.bizibah.com** (2026-10-30). План и открытые вопросы — в `TODO.md`.
+Статус: **работает на https://www.knigopis.com** (с 2026-11-02; прежний адрес демо https://knigopis.bizibah.com — тот же узел). План и открытые вопросы — в `TODO.md`.
 Код: https://github.com/gurov/knigopis-p2p (приватный до конца настройки, потом станет публичным; ветка `master`).
 
 ## Контекст
@@ -12,20 +12,20 @@
   В 2025-08 добавлен вход по паролю (локальные аккаунты), в 2026-05 uLogin отключён и регистрация закрыта.
   **На 2026-10-30 api.knigopis.com отвечает 502** — старый сайт не показывает данные.
 - Цель была: показать прототип Роме, чтобы он поднял всё у себя на VPS. **2026-11-02 Рома сказал, что продолжать
-  не будет.** Домен knigopis.com (NS — DigitalOcean) и аккаунт GitHub `knigopis` он передал владельцу папки.
-  Главный узел будет на VPS владельца. Блок Caddy для www — только после того, как DNS указывает на VPS, иначе
-  Let's Encrypt после неудачных попыток временно перестаёт выдавать сертификат. Деплой по-прежнему
-  должен легко переноситься (Docker Compose + блок для Caddy, без привязки к bizibah).
-  Инструкция для Ромы (узел за nginx-proxy сразу на www.knigopis.com, проверка, обслуживание) — артефакт
-  https://claude.ai/artifact/DnVgcWpV1qBk4HQEZj2zBp (UUID для инструментов — `6787cf61-51fa-449c-a614-9bdcedb65eff`,
-  виден только владельцу). Исходник — `.cache/roma-instructions.html`, не в git; публиковать из него.
-  Команды в нём повторяют `selfhost/README.md`.
+  не будет.** Домен knigopis.com (регистратор internet.bs, DNS — DigitalOcean, оплачен до 2027-01-18) и аккаунт GitHub
+  `knigopis` он передал владельцу папки. Главный узел — на bizibah (см. ниже). Деплой по-прежнему должен легко
+  переноситься (Docker Compose + блок для Caddy).
+  Инструкция для Ромы (узел за nginx-proxy) устарела: артефакт `6787cf61-51fa-449c-a614-9bdcedb65eff`,
+  исходник `.cache/roma-instructions.html` (не в git).
+- **DNS knigopis.com** — зона в DigitalOcean владельца: `A @` и `A www` → 165.227.139.115,
+  `TXT _github-pages-challenge-knigopis` (подтверждение домена на GitHub Pages — не удалять). MX нет (был
+  mx.yandex.ru; почта — в TODO). `api` и `alpha` не перенесены, с Pages адреса сняты (2026-11-02).
 - Репозитории (на GitHub `knigopis` — аккаунт-пользователь, не организация; превратить его в организацию можно
   только через переименование и перенос репозиториев — решено не делать, 2026-11-02). `gurov` — соавтор
   (write) во всех репозиториях `knigopis`. `gh` здесь залогинен и как `knigopis` (основной — `gurov`): действия
   владельца — `GH_TOKEN=$(gh auth token -u knigopis) gh …` (публичный репозиторий в auto mode создаёт сам
   пользователь). Репозитории:
-  - `www.knigopis.com` — старый фронт v1, GitHub Pages;
+  - `www.knigopis.com` — старый фронт v1 (Pages, теперь без своего домена);
   - `api.knigopis.com` — Yii2 API;
   - `repo2.knigopis.com` — **данные**; `repo.knigopis.com` — устаревшие;
   - `www.knigopis.com_v2` / `gurov/knigopis2` — прототип v2 (Angular 2, alpha.knigopis.com). **Отвергнут, дизайн берём из v1.**
@@ -42,9 +42,9 @@
 - **`auth.csv` — bcrypt-хэши паролей локальных аккаунтов в открытом доступе.** Упаковка архива его не читает.
 - На 2026-10-30: 4276 пользователей, 31 077 книг, 6169 желаний; ≥100 пользователей с подписками.
 - Старый адрес профиля: `/#/<ник>/books?u=<userId>&y=<год>`. PWA перенаправляет его на `/archive/<userId>` (`src/main.tsx`).
-- Основной адрес старого сайта — **`www.knigopis.com`** (корень перенаправляет на www). Новый сайт ставится сразу
-  туда, без промежуточного поддомена: смена адреса разлогинивает всех (ключ привязан к origin).
-  В `known-relays.json` — `wss://www.knigopis.com`: WebSocket по редиректу не переходит.
+- Основной адрес — **`www.knigopis.com`**, корень перенаправляется на www, как у старого сайта. Адрес не менять:
+  смена разлогинивает всех (ключ привязан к origin). В `known-relays.json` — `wss://www.knigopis.com`: WebSocket
+  по редиректу не переходит.
 
 ## Устройство прототипа
 
@@ -73,15 +73,12 @@
   `maxFilterLimit = 5000`. Точка входа — `run.sh`: relay плюс, если задан `UPSTREAM`, `strfry sync --dir both`
   с другими узлами раз в `SYNC_INTERVAL`. Синхронизация идёт в том же контейнере: LMDB проверяет читателей по PID.
   С аргументами `run.sh` просто запускает команду strfry (`export`, `sync`…).
-- **Главный узел (www.knigopis.com)** разворачивается как остальные проекты Ромы за nginx-proxy:
-  `./release.sh` = `git pull` + `docker-compose -p knigopis -f deployments/docker-compose.prod.yml pull && up -d` + `docker image prune`.
-  На сервере ничего не собирается (сборка съела диск): образы собирает GitHub Actions (`.github/workflows/docker.yml`)
-  после push в `master` → `ghcr.io/gurov/knigopis-p2p/{relay,web}:latest`; на PR — только проверочная сборка.
-  Коммиты только с документацией, тестами и деплойными файлами сборку не запускают (`paths-ignore`).
-  Образы приватные, на сервере нужен `docker login ghcr.io` (токен с `read:packages`).
-  `build/Dockerfile` — сайт, архив (клон repo2 внутри сборки) и Caddy из `selfhost/Caddyfile*`; relay — `relay/Dockerfile`.
-  Домены и `UPSTREAM` прописаны в compose. Локально — `make up` (:8080, собирает образы — тяжело).
-  На проде Docker был 19.03 — Alpine 3.14+ на нём не работает (seccomp режет `faccessat2`), нужен Docker 20.10+.
+- **Образы ghcr.io** (сделал Рома 2026-11-01; сейчас не используются — главный узел на bizibah):
+  `.github/workflows/docker.yml` после push в `master` собирает `ghcr.io/gurov/knigopis-p2p/{relay,web}:latest`
+  (пакеты приватные), на PR — только проверочная сборка; коммиты только с документацией сборку не запускают.
+  `build/Dockerfile` — сайт, архив (клон repo2 внутри сборки) и Caddy из `selfhost/Caddyfile*`.
+  `deployments/docker-compose.prod.yml` + `./release.sh` — узел за nginx-proxy с прописанными доменами; `make up` — локально.
+  Docker 19.03 не годится: Alpine 3.14+ на нём не работает (seccomp режет `faccessat2`), нужен 20.10+.
 - **Узлы:** все одинаковые — сайт и relay (`selfhost/`, инструкция — `selfhost/README.md`).
   - Варианты: чистый сервер (профиль `web` = свой Caddy с HTTPS), уже есть nginx/Caddy (только relay; пример —
     `selfhost/nginx.conf.example`), за nginx-proxy + acme-companion (`compose.nginx-proxy.yml` через `COMPOSE_FILE`
@@ -89,18 +86,18 @@
   - `selfhost/update.sh` скачивает из релиза сайт и образ relay и перезапускает узел — на сервере ничего не собирается.
   - Клиент по умолчанию пишет на свой хост и все узлы из `src/known-relays.json`; новый узел добавляется туда PR
     и в `relays.txt` бота снимков.
-- **Бэкап записей** — https://github.com/knigopis/events (работает с 2026-11-02), локально `~/p-erebor/knigopis-events`
-  (бот там же, `npm test`; коммиты бота — `git pull` перед правками). GitHub Actions два раза в день читает все события со всех узлов из `relays.txt`,
-  проверяет подписи и коммитит последние версии в `events/<2 символа>/<pubkey>.jsonl`. Надгробия остаются,
-  kind 5 убирает только старые версии. Предохранитель: больше 5000 новых или −10% (и хотя бы −10) —
-  без коммита, запуск падает; `force` в Run workflow. Восстановление — `strfry import`, подделки он отвергает
-  (проверено 2026-11-02).
   - Синхронизация — сеткой без центра: в `UPSTREAM` нового узла все узлы из `known-relays.json`. Sync двусторонний,
     старым узлам ничего менять не надо. «Главный» узел — только адрес, на который заходят читатели; ключи привязаны
     к origin, поэтому домен должен быть у долгосрочного владельца.
   - Страница сайта `/node` («Свой узел», `src/pages/NodePage.tsx`) — короткая версия инструкции для читателей;
     команды в ней должны совпадать с `selfhost/README.md`. Ссылки на неё — в «Долговечности» на главной и в подвале.
     Адрес репозитория — `REPO_URL` в `src/lib/config.ts`.
+- **Бэкап записей** — https://github.com/knigopis/events (работает с 2026-11-02), локально `~/p-erebor/knigopis-events`
+  (бот там же, `npm test`; коммиты бота — `git pull` перед правками). GitHub Actions два раза в день читает
+  все события со всех узлов из `relays.txt`, проверяет подписи и коммитит последние версии
+  в `events/<2 символа>/<pubkey>.jsonl`. Надгробия остаются, kind 5 убирает только старые версии. Предохранитель: больше 5000 новых или −10% (и хотя бы −10) —
+  без коммита, запуск падает; `force` в Run workflow. Восстановление — `strfry import`, подделки он отвергает
+  (проверено 2026-11-02).
 - **Релиз** (`npm run release -- vX.Y.Z`, только из чистого запушенного HEAD) — три файла: `knigopis-site.tar.gz`
   (сайт с архивом), `knigopis-legacy.tar.gz`, `knigopis-relay-image-amd64.tar.gz`.
   В сборке есть `404.html` (копия `index.html`) — для статических хостингов без SPA-маршрутов.
@@ -125,8 +122,6 @@
 ## Команды
 
 ```sh
-./release.sh                           # на сервере главного узла: git pull + docker-compose pull + up -d
-make up                                # тот же узел локально на http://localhost:8080 (make stop)
 npm run legacy                         # клон repo2 во временный каталог вне проекта → public/legacy → клон удаляется (~1 мин)
 docker build -t knigopis-relay:dev relay   # образ relay (~5 мин, один раз)
 npm run relay                          # два локальных relay: 7777 и 7778 (реплика, синхронизация раз в 30 с)
@@ -147,15 +142,16 @@ relay видит IP клиента. Выдача сертификата acme-com
 Модули `src/lib` можно проверять без входа и UI: на dev-сервере в Playwright
 `page.evaluate(() => import('/src/lib/nostr.ts'))` отдаёт тот же экземпляр модуля, что у приложения.
 
-## Хостинг демо: knigopis.bizibah.com
+## Главный узел: www.knigopis.com на bizibah
 
 - **Сервер** `root@bizibah.com` (165.227.139.115, DigitalOcean): Ubuntu 24.04, 1 vCPU, 1,9 ГБ RAM, Docker 24 / Compose v2.20,
   Caddy 2.11. На сервере много других сервисов; контейнеры слушают только `127.0.0.1`.
 - **Размещение:**
   - relay — `/opt/knigopis/compose.yml` (= `selfhost/compose.yml` без профиля web), контейнер `knigopis-relay-1`, том `knigopis_relay-data`, порт `127.0.0.1:7777`;
   - статика — `/var/www/knigopis-site`;
-  - блок Caddy дописан в конец `/etc/caddy/Caddyfile` между маркерами `# >>> knigopis` / `# <<< knigopis <<<`.
-    Сниппеты `security` (без CSP) и `logs` — общие.
+  - блок Caddy дописан в конец `/etc/caddy/Caddyfile` между маркерами `# >>> knigopis` / `# <<< knigopis <<<`:
+    `www.knigopis.com, knigopis.bizibah.com` — один сайт и relay (bizibah не перенаправляется: там ключи тех,
+    кто входил на демо); `knigopis.com` → 301 на www. Сниппеты `security` (без CSP) и `logs` — общие.
 - **Маршруты на одном домене:** WebSocket → relay; `Accept: application/nostr+json` (NIP-11) → relay;
   `/legacy/*` — статика без подмены на index.html (честный 404); остальное — SPA с `try_files … /index.html`.
 

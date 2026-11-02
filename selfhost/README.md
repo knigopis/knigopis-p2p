@@ -12,25 +12,6 @@
 Готовый образ relay — только под amd64. На ARM (Raspberry Pi и т. п.) соберите сами: `docker compose build relay`.
 Это компиляция strfry, 10–30 минут.
 
-## Главный узел (www.knigopis.com): git pull + docker-compose
-
-Главный узел обновляется как остальные проекты за nginx-proxy, но на сервере ничего не собирается:
-образы `relay` и `web` собирает GitHub Actions (`.github/workflows/docker.yml`) после каждого push в `master`
-и кладёт в `ghcr.io/gurov/knigopis-p2p/{relay,web}:latest`. `deployments/docker-compose.prod.yml` — relay и web,
-домены и `UPSTREAM` прописаны в нём.
-
-```sh
-git clone https://github.com/gurov/knigopis-p2p.git /opt/knigopis
-cd /opt/knigopis
-# Репозиторий приватный, значит и образы тоже: один раз войти токеном GitHub с правом read:packages.
-echo <токен> | docker login ghcr.io -u <логин GitHub> --password-stdin
-./release.sh        # git pull, docker-compose pull, up -d, docker image prune
-```
-
-Нужна внешняя сеть `nginx-proxy` с nginx-proxy и acme-companion. Перед `./release.sh` дождитесь зелёной сборки
-в Actions. Записи лежат в томе `knigopis_relay-data`. Собрать те же образы у себя — `make up` (http://localhost:8080);
-это компиляция strfry, 10–30 минут.
-
 ## Вариант 1. Чистый сервер — всё в Docker, HTTPS сам
 
 ```sh
@@ -49,7 +30,7 @@ cp .env.example .env      # DOMAIN, UPSTREAM — см. комментарии в
 3. Настройте свой веб-сервер. На одном домене WebSocket и NIP-11 уходят на relay, остальное — статика с запасным `index.html`.
    - **nginx:** `nginx.conf.example`;
    - **Caddy:** `Caddyfile` из этого каталога — замените `relay:7777` на `127.0.0.1:7777`, а `/srv` на путь к `site`.
-     Рабочий пример — `deploy/knigopis.caddy` (так устроен knigopis.bizibah.com).
+     Рабочий пример — `deploy/knigopis.caddy` (так устроен главный узел www.knigopis.com).
 
 ## Вариант 3. nginx-proxy в Docker (с acme-companion)
 
@@ -98,23 +79,14 @@ acme-companion, узел подключается к ним сам.
 
 До этого ваш узел можно добавить вручную: «Настройки → Серверы».
 
-## Главный узел и переезд
+## Главный узел
 
-Главный узел — тот, на чей адрес заходят читатели (сейчас knigopis.bizibah.com, потом www.knigopis.com).
-Для синхронизации он такой же, как остальные.
+Главный узел — тот, на чей адрес заходят читатели: www.knigopis.com (корень knigopis.com перенаправляется на www).
+Для синхронизации он такой же, как остальные. Устроен по варианту 2: Caddy на сервере, блок — `deploy/knigopis.caddy`.
 
 Ключ читателя хранится в браузере и привязан к адресу сайта. Поэтому домен главного узла должен быть у того,
 кто будет держать его долго. Если домен истечёт и его займёт кто-то другой, новый хозяин сможет выложить свой сайт
 и прочитать ключи тех, кто входил на этом адресе. Узлам у друзей лучше быть репликами на своих доменах.
-
-Переезд на www.knigopis.com — сразу на основной адрес, без промежуточного поддомена:
-1. Перевести DNS `www.knigopis.com` и `knigopis.com` на новый сервер. Сейчас там GitHub Pages: убрать `CNAME`
-   из репозитория `knigopis/www.knigopis.com`.
-2. Поднять узел с `DOMAIN=www.knigopis.com` и `UPSTREAM=wss://knigopis.bizibah.com`: он заберёт все записи и дальше
-   будет синхронизироваться с bizibah в обе стороны. `knigopis.com` перенаправить на `www` (за nginx-proxy —
-   `REDIRECT_FROM=knigopis.com`). Старые ссылки `www.knigopis.com/#/ник/books?u=…` сами откроют архив пользователя.
-3. Добавить `wss://www.knigopis.com` в `src/known-relays.json` и выпустить релиз. Указывать надо именно основной
-   адрес: по редиректу WebSocket не переходит.
 
 ## Обслуживание
 

@@ -1,5 +1,8 @@
 # >>> knigopis — блок целиком управляется deploy/apply-caddy.sh >>>
-# Прототип новой Книгописи: PWA и relay Nostr на одном домене.
+# Главный узел Книгописи: PWA и relay Nostr на одном домене. Основной адрес —
+# www.knigopis.com; knigopis.bizibah.com — прежний адрес демо, тот же сайт и relay
+# (ключи читателей привязаны к адресу, поэтому он не перенаправляется). Корень
+# knigopis.com перенаправляется на www, как у старого сайта.
 #
 #   /var/www/knigopis-site — собранная PWA и архив старой Книгописи
 #                            (deploy/publish.sh, rsync --delete).
@@ -9,7 +12,7 @@
 # всё остальное — статика. Ключ при входе по QR-ссылке идёт после #, поэтому
 # в access.log не попадает.
 
-knigopis.bizibah.com {
+www.knigopis.com, knigopis.bizibah.com {
 	import security
 	import logs
 
@@ -51,5 +54,11 @@ knigopis.bizibah.com {
 		@fresh path / /index.html /sw.js /registerSW.js /manifest.webmanifest
 		header @fresh Cache-Control "no-cache"
 	}
+}
+
+knigopis.com {
+	import security
+	import logs
+	redir https://www.knigopis.com{uri} permanent
 }
 # <<< knigopis <<<
