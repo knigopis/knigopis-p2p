@@ -4,12 +4,28 @@
 # push в master  → сборка и публикация :latest и :sha-<коммит>
 # pull request   → только сборка (проверка, что собирается), без публикации
 # вручную        → Actions → docker → Run workflow
+# Коммиты, где поменялись только файлы ниже (документация, тесты, деплой bizibah,
+# compose прода), образы не меняют — сборка не запускается.
 name: docker
 
 on:
   push:
     branches: [master]
+    paths-ignore:
+      - '**.md'
+      - 'e2e/**'
+      - 'deploy/**'
+      - 'deployments/**'
+      - 'release.sh'
+      - 'Makefile'
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'e2e/**'
+      - 'deploy/**'
+      - 'deployments/**'
+      - 'release.sh'
+      - 'Makefile'
   workflow_dispatch:
 
 permissions:
