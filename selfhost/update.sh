@@ -9,7 +9,7 @@
 set -eu
 cd "$(dirname "$0")"
 
-REPO="${REPO:-gurov/knigopis-p2p}"
+REPO="${REPO:-knigopis/knigopis-p2p}"
 TAG="${1:-latest}"
 SITE=knigopis-site.tar.gz
 IMAGE=knigopis-relay-image-amd64.tar.gz

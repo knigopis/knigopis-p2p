@@ -1,6 +1,6 @@
 import known from '../known-relays.json';
 
-export const REPO_URL = 'https://github.com/gurov/knigopis-p2p';
+export const REPO_URL = 'https://github.com/knigopis/knigopis-p2p';
 export { known as KNOWN_RELAYS };
 
 // Номера kind Книгописи. Диапазон 30000–39999 — адресуемые события: relay хранит

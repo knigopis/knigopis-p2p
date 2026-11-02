@@ -12,7 +12,7 @@
 set -euo pipefail
 
 TAG="${1:?usage: release.sh <tag>}"
-REPO="${REPO:-gurov/knigopis-p2p}"
+REPO="${REPO:-knigopis/knigopis-p2p}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 

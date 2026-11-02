@@ -15,7 +15,7 @@
 ## Вариант 1. Чистый сервер — всё в Docker, HTTPS сам
 
 ```sh
-git clone https://github.com/gurov/knigopis-p2p.git /opt/knigopis
+git clone https://github.com/knigopis/knigopis-p2p.git /opt/knigopis
 cd /opt/knigopis/selfhost
 cp .env.example .env      # DOMAIN, UPSTREAM — см. комментарии в файле
 ./update.sh               # скачает сайт и образ relay из последнего релиза и запустит
