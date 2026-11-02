@@ -56,9 +56,7 @@
   читателей привязаны к домену, а истёкший домен может занять кто угодно.
 - [x] www.knigopis.com → новая PWA на bizibah (2026-11-02): DNS в DigitalOcean, Caddy, корень → www, с GitHub Pages
   адреса сняты, `wss://www.knigopis.com` в `known-relays.json` и в `relays.txt` бота снимков.
-- [ ] **(вы)** Почта @knigopis.com — только приём: info@ → Gmail через ImprovMX (бесплатно: 1 домен, 25 адресов,
-  500 писем в день). В DigitalOcean: `MX @ mx1.improvmx.com` 10, `MX @ mx2.improvmx.com` 20,
-  `TXT @ v=spf1 include:spf.improvmx.com ~all`. До этого MX нет (был mx.yandex.ru).
+- [x] Почта @knigopis.com — только приём: info@ → Gmail через ImprovMX (бесплатно), работает с 2026-11-02.
 - [ ] Вторая и третья постоянные реплики (у друзей) — по `selfhost/README.md`. Сейчас узел один: www.knigopis.com
   и knigopis.bizibah.com — один и тот же сервер.
 - [x] Бот снимков https://github.com/knigopis/events — работает с 2026-11-02, первый снимок: 216 событий
