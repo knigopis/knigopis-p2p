@@ -131,7 +131,7 @@ const phone = await browser.newContext({
 const mp = await phone.newPage();
 watch(mp, 'phone');
 await mp.goto(BASE + '/login#' + nsec);
-await mp.waitForURL('**/u/npub1*');
+await mp.waitForURL(/\/u\/[0-9a-f]{16}$/);
 console.log('    в адресе нет ключа:', !mp.url().includes('nsec'));
 await mp.locator('.book-group').first().waitFor();
 await mp.waitForTimeout(500);

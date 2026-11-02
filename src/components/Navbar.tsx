@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { account, logout } from '../lib/account';
 import { displayName } from '../lib/profiles';
+import { userPath } from './UserLink';
 import { Avatar } from './Avatar';
 
 export function Navbar() {
@@ -25,7 +26,7 @@ export function Navbar() {
     return () => document.removeEventListener('click', close);
   }, [menu]);
 
-  const my = acc ? `/u/${acc.npub}` : '';
+  const my = acc ? userPath(acc.pk) : '';
   const links = acc
     ? [
         { href: my, label: 'Мои книги' },

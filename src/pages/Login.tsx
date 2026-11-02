@@ -63,9 +63,10 @@ export function Login() {
     const acc = createAccount();
     setCreated(acc);
     try {
-      if (nick.trim()) await saveProfile(acc.pk, nick.trim());
+      // Профиль сохраняется и без ника: в нём тег для короткой ссылки на страницу.
+      await saveProfile(acc.pk, nick.trim());
     } catch (err) {
-      setError(new Error(`Аккаунт создан, но ник сохранить не удалось (${err instanceof Error ? err.message : err}). Его можно задать позже в настройках.`));
+      setError(new Error(`Аккаунт создан, но профиль сохранить не удалось (${err instanceof Error ? err.message : err}). Ник можно задать позже в настройках.`));
     } finally {
       setBusy(false);
     }

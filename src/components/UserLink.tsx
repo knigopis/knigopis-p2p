@@ -1,7 +1,7 @@
-import * as nip19 from 'nostr-tools/nip19';
-import { displayName } from '../lib/profiles';
+import { displayName, shortId } from '../lib/profiles';
 
-export const userPath = (pubkey: string) => `/u/${nip19.npubEncode(pubkey)}`;
+// Короткая ссылка (см. shortId в profiles.ts); старые ссылки /u/npub1… тоже работают.
+export const userPath = (pubkey: string) => `/u/${shortId(pubkey)}`;
 export const archivePath = (legacyId: string) => `/archive/${encodeURIComponent(legacyId)}`;
 
 // Имя берётся из кеша профилей (signal) — ссылка обновится, когда профиль загрузится.

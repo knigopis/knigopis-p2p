@@ -2,11 +2,11 @@ import './styles/main.css';
 import { render } from 'preact';
 import { useEffect } from 'preact/hooks';
 import { LocationProvider, Route, Router, useLocation } from 'preact-iso';
-import { effect } from '@preact/signals';
+import { effect, untracked } from '@preact/signals';
 import { registerSW } from 'virtual:pwa-register';
 import { account } from './lib/account';
 import { loadMyFollows, myFollows } from './lib/follows';
-import { ensureProfiles } from './lib/profiles';
+import { ensureProfiles, ensureShortTag } from './lib/profiles';
 import { Footer } from './components/Footer';
 import { Navbar } from './components/Navbar';
 import { ArchiveUser } from './pages/ArchiveUser';
@@ -39,14 +39,20 @@ window.addEventListener('hashchange', () => {
   if (redirectOldUrls()) dispatchEvent(new PopStateEvent('popstate'));
 });
 
+// Только при входе и выходе. Без untracked эффект подписывался и на сигналы, которые
+// читают ensureProfiles и query (профили, список relay), и заново качал подписки после
+// каждой загрузки любого профиля — заодно мог затереть только что поставленную звезду.
 effect(() => {
   const acc = account.value;
-  if (acc) {
-    ensureProfiles([acc.pk]);
-    loadMyFollows().catch(() => (myFollows.value = []));
-  } else {
-    myFollows.value = null;
-  }
+  untracked(() => {
+    if (acc) {
+      ensureProfiles([acc.pk]);
+      loadMyFollows().catch(() => (myFollows.value = []));
+      ensureShortTag(acc.pk).catch(() => {});
+    } else {
+      myFollows.value = null;
+    }
+  });
 });
 
 function ScrollToTop() {
@@ -69,8 +75,8 @@ function App() {
           <Route path="/archive/:id" component={ArchiveUser} />
           <Route path="/archive/:id/:tab" component={ArchiveUser} />
           <Route path="/import/:id" component={Import} />
-          <Route path="/u/:npub" component={UserPage} />
-          <Route path="/u/:npub/:tab" component={UserPage} />
+          <Route path="/u/:id" component={UserPage} />
+          <Route path="/u/:id/:tab" component={UserPage} />
           <Route path="/book/add" component={BookForm} />
           <Route path="/book/edit/:d" component={BookForm} />
           <Route path="/wish/add" component={WishForm} />

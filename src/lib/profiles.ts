@@ -47,9 +47,62 @@ export function displayName(pubkey: string): string {
   return profiles.value[pubkey]?.name || shortNpub(nip19.npubEncode(pubkey));
 }
 
-export async function saveProfile(pubkey: string, name: string) {
+// Короткая ссылка на пользователя — /u/<первые 16 hex ключа> вместо npub на 63 символа.
+// Relay не ищут по началу ключа, поэтому профиль (kind 0) несёт тег u с этим началом,
+// и ищем по тегу. Тег может поставить себе кто угодно, поэтому из найденного берём
+// только ключи, которые правда так начинаются: подобрать ключ с теми же 16 символами
+// (64 бита) нереально.
+const SHORT_TAG = 'u';
+export const shortId = (pubkey: string) => pubkey.slice(0, 16);
+export const isShortId = (s: string) => /^[0-9a-f]{16}$/.test(s);
+
+function withShortTag(pubkey: string, tags: string[][]): string[][] {
+  return [...tags.filter((t) => t[0] !== SHORT_TAG), [SHORT_TAG, shortId(pubkey)]];
+}
+
+async function ownProfileEvent(pubkey: string) {
   const [current] = latestByAddress(await query({ kinds: [0], authors: [pubkey] }));
+  return current;
+}
+
+// Новая версия профиля должна быть строго новее той, от которой отталкивались: при
+// равном времени relay оставляет версию с меньшим id, и правка может пропасть.
+const nextTime = (current?: { created_at: number }) => Math.max(now(), (current?.created_at ?? 0) + 1);
+
+export async function saveProfile(pubkey: string, name: string) {
+  const current = await ownProfileEvent(pubkey);
   const raw = { ...(current ? parse(current.content) : {}), name, display_name: name };
-  await publish({ kind: 0, created_at: now(), content: JSON.stringify(raw), tags: [] });
+  const tags = withShortTag(pubkey, current?.tags ?? []);
+  await publish({ kind: 0, created_at: nextTime(current), content: JSON.stringify(raw), tags });
   profiles.value = { ...profiles.value, [pubkey]: { name, raw } };
+}
+
+// Профили, сохранённые до коротких ссылок, тега не имеют — дописываем его при входе.
+// Проверка — один раз на браузер, а не на каждой загрузке страницы. Профиль здесь
+// только правится, а не создаётся: новый аккаунт сохраняет его сам (Login), и два
+// профиля в одну секунду затёрли бы ник.
+const SHORT_TAG_OK = 'knigopis.shortTag';
+
+export async function ensureShortTag(pubkey: string) {
+  if (localStorage.getItem(SHORT_TAG_OK) === pubkey) return;
+  const current = await ownProfileEvent(pubkey);
+  if (!current) return;
+  if (!current.tags.some((t) => t[0] === SHORT_TAG && t[1] === shortId(pubkey))) {
+    const tags = withShortTag(pubkey, current.tags);
+    await publish({ kind: 0, created_at: nextTime(current), content: current.content, tags });
+  }
+  localStorage.setItem(SHORT_TAG_OK, pubkey);
+}
+
+const resolved = new Map<string, string[]>();
+
+// Ключи, подходящие под короткую ссылку: обычно ровно один, пусто — если этот
+// пользователь не заходил с тех пор, как появились короткие ссылки.
+export async function resolveShortId(short: string): Promise<string[]> {
+  const cached = resolved.get(short);
+  if (cached) return cached;
+  const events = await query({ kinds: [0], [`#${SHORT_TAG}`]: [short] });
+  const keys = [...new Set(events.filter((ev) => ev.pubkey.startsWith(short)).map((ev) => ev.pubkey))];
+  if (keys.length) resolved.set(short, keys);
+  return keys;
 }

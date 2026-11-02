@@ -78,6 +78,8 @@ export function ArchiveUser() {
   const u = user.data;
   const base = archivePath(u.id);
   const mine = acc && claims.data?.some((c) => c.pubkey === acc.pk);
+  // «Хочу прочитать» в старой Книгописи видел только хозяин — здесь тоже, после переноса.
+  const view = tab === 'wishes' && !mine ? 'books' : tab;
   const importHref = acc ? `/import/${encodeURIComponent(u.id)}` : `/login?next=${encodeURIComponent(`/import/${encodeURIComponent(u.id)}`)}`;
 
   return (
@@ -129,27 +131,29 @@ export function ArchiveUser() {
 
       <ul class="nav-tabs">
         <li>
-          <a href={base} class={tab === 'books' ? 'active' : ''}>
+          <a href={base} class={view === 'books' ? 'active' : ''}>
             Прочитано <sup>{u.books.length}</sup>
           </a>
         </li>
-        <li>
-          <a href={`${base}/wishes`} class={tab === 'wishes' ? 'active' : ''}>
-            Хочу прочитать <sup>{u.wishes.length}</sup>
-          </a>
-        </li>
+        {mine && (
+          <li>
+            <a href={`${base}/wishes`} class={view === 'wishes' ? 'active' : ''}>
+              Хочу прочитать <sup>{u.wishes.length}</sup>
+            </a>
+          </li>
+        )}
         {u.subscriptions.length > 0 && (
           <li>
-            <a href={`${base}/subscriptions`} class={tab === 'subscriptions' ? 'active' : ''}>
+            <a href={`${base}/subscriptions`} class={view === 'subscriptions' ? 'active' : ''}>
               Подписки <sup>{u.subscriptions.length}</sup>
             </a>
           </li>
         )}
       </ul>
 
-      {tab === 'books' && <BookList items={bookItems} />}
-      {tab === 'wishes' && <WishList items={wishItems} />}
-      {tab === 'subscriptions' &&
+      {view === 'books' && <BookList items={bookItems} />}
+      {view === 'wishes' && <WishList items={wishItems} />}
+      {view === 'subscriptions' &&
         (subs.data ? (
           <ul class="list-inline">
             {subs.data.map((s) => (

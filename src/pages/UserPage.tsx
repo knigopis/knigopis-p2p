@@ -3,7 +3,7 @@ import { useRoute } from 'preact-iso';
 import * as nip19 from 'nostr-tools/nip19';
 import { account } from '../lib/account';
 import { myFollows, updateFollows } from '../lib/follows';
-import { displayName, ensureProfiles } from '../lib/profiles';
+import { displayName, ensureProfiles, isShortId, resolveShortId } from '../lib/profiles';
 import { fetchBooks, fetchClaimsBy, fetchWishes } from '../lib/records';
 import { markSeen } from '../lib/util';
 import { Avatar } from '../components/Avatar';
@@ -14,9 +14,11 @@ import { NotFound } from './NotFound';
 
 const q = (params: Record<string, string>) => new URLSearchParams(params).toString();
 
-function decodeNpub(npub: string): string | null {
+// Полный ключ: npub1… (старые ссылки) или 64 hex.
+function decodeKey(id: string): string | null {
+  if (/^[0-9a-f]{64}$/.test(id)) return id;
   try {
-    const d = nip19.decode(npub);
+    const d = nip19.decode(id);
     return d.type === 'npub' ? d.data : null;
   } catch {
     return null;
@@ -25,9 +27,30 @@ function decodeNpub(npub: string): string | null {
 
 export function UserPage() {
   const { params } = useRoute();
-  const pk = decodeNpub(params.npub);
-  if (!pk) return <NotFound />;
-  return <UserView pk={pk} tab={params.tab ?? 'books'} />;
+  const tab = params.tab ?? 'books';
+  const direct = decodeKey(params.id);
+  const short = !direct && isShortId(params.id) ? params.id : null;
+  const found = useAsync(() => (short ? resolveShortId(short) : Promise.resolve(null)), [short]);
+
+  if (direct) return <UserView pk={direct} tab={tab} />;
+  if (!short) return <NotFound />;
+  if (found.error) return <ErrorAlert error={found.error} onRetry={found.reload} />;
+  if (!found.data) return <Loading />;
+  if (found.data.length === 1) return <UserView pk={found.data[0]} tab={tab} />;
+  if (!found.data.length) return <NotFound />;
+  // Два ключа с одинаковым началом — только если кто-то подбирал ключ нарочно.
+  return (
+    <div>
+      <h1>По этой ссылке несколько пользователей</h1>
+      <ul>
+        {found.data.map((pk) => (
+          <li key={pk}>
+            <a href={`/u/${nip19.npubEncode(pk)}`}>{displayName(pk)}</a> <code>{nip19.npubEncode(pk)}</code>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 function FollowStar({ pk }: { pk: string }) {
@@ -68,7 +91,8 @@ function UserView({ pk, tab }: { pk: string; tab: string }) {
   const acc = account.value;
   const isMe = acc?.pk === pk;
   const books = useAsync(() => fetchBooks(pk), [pk]);
-  const wishes = useAsync(() => fetchWishes(pk), [pk]);
+  // «Хочу прочитать» — личный список, как в старой Книгописи: чужие не показываем.
+  const wishes = useAsync(() => (isMe ? fetchWishes(pk) : Promise.resolve([])), [pk, isMe]);
   const claims = useAsync(() => fetchClaimsBy(pk), [pk]);
 
   useEffect(() => {
@@ -118,7 +142,8 @@ function UserView({ pk, tab }: { pk: string; tab: string }) {
   );
 
   const base = userPath(pk);
-  const current = tab === 'wishes' ? wishes : books;
+  const showWishes = isMe && tab === 'wishes';
+  const current = showWishes ? wishes : books;
 
   return (
     <div>
@@ -160,22 +185,32 @@ function UserView({ pk, tab }: { pk: string; tab: string }) {
 
       <ul class="nav-tabs">
         <li>
-          <a href={base} class={tab !== 'wishes' ? 'active' : ''}>
+          <a href={base} class={!showWishes ? 'active' : ''}>
             Прочитано {books.data ? <sup>{books.data.length}</sup> : null}
           </a>
         </li>
-        <li>
-          <a href={`${base}/wishes`} class={tab === 'wishes' ? 'active' : ''}>
-            Хочу прочитать {wishes.data ? <sup>{wishes.data.length}</sup> : null}
-          </a>
-        </li>
+        {isMe && (
+          <li>
+            <a href={`${base}/wishes`} class={tab === 'wishes' ? 'active' : ''}>
+              Хочу прочитать {wishes.data ? <sup>{wishes.data.length}</sup> : null}
+            </a>
+          </li>
+        )}
       </ul>
 
       {current.error ? <ErrorAlert error={current.error} onRetry={current.reload} /> : null}
       {current.loading && !current.data ? <Loading /> : null}
-      {tab === 'wishes'
-        ? wishes.data && <WishList items={wishItems} />
-        : books.data && <BookList items={bookItems} />}
+      {showWishes ? (
+        <>
+          <p class="text-muted">
+            Этот список видите только вы. Но он не зашифрован: как и в старой Книгописи, записи хранятся открыто
+            на серверах и в резервной копии.
+          </p>
+          {wishes.data && <WishList items={wishItems} />}
+        </>
+      ) : (
+        books.data && <BookList items={bookItems} />
+      )}
     </div>
   );
 }
