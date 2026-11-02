@@ -4,6 +4,10 @@
 
 encode zstd gzip
 
+# Скрипты, стили и прочее — только с этого сайта. relay — любые wss: читатель может добавить
+# свои серверы. Встроенных скриптов и стилей в сборке нет; QR — SVG без style.
+header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' wss:; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+
 # Без учёта регистра: Node/undici шлёт «connection: upgrade» строчными,
 # и привычный матчер header Connection *Upgrade* его пропускает.
 @relay header_regexp Upgrade (?i)^websocket$

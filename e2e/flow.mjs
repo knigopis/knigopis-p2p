@@ -3,21 +3,47 @@
 // Нужны локальные relay (npm run relay) и dev-сервер с VITE_RELAYS на оба.
 // Пишет данные (аккаунт, перенос архива lucius) — на прод не запускать.
 // Chrome берётся системный: /usr/bin/google-chrome.
+// E2E_CSP=1 — с тем же Content-Security-Policy, что отдаёт узел (node/routes.caddy):
+// нарушения попадут в «Ошибки в консоли». Запускать на продакшн-сборке (vite preview).
 import { chromium } from 'playwright-core';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 
 const BASE = process.argv[2] ?? 'http://localhost:5173';
 const OUT = process.argv[3] ?? '.cache/e2e-shots';
 mkdirSync(OUT, { recursive: true });
 
-const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
+// Локальные relay тестов — ws://localhost (на сайте все relay — wss:, и ws: там не нужен).
+const CSP = process.env.E2E_CSP
+  ? readFileSync(new URL('../node/routes.caddy', import.meta.url), 'utf8')
+      .match(/Content-Security-Policy "([^"]+)"/)[1]
+      .replace("connect-src 'self' wss:", "connect-src 'self' wss: ws://localhost:*")
+  : null;
+// Заголовок подставляется в ответы сайта; Service Worker выключен, иначе ответы шли бы мимо.
+const context = async (options) => {
+  const ctx = await browser.newContext({ ...options, ...(CSP ? { serviceWorkers: 'block' } : {}) });
+  if (CSP) {
+    const origin = new URL(BASE).origin;
+    await ctx.route((url) => url.origin === origin, async (route) => {
+      const response = await route.fetch();
+      await route.fulfill({ response, headers: { ...response.headers(), 'content-security-policy': CSP } });
+    });
+  }
+  return ctx;
+};
+
+// С подставленным ответом Chrome считает страницу пришедшей «из интернета» и не пускает её
+// к relay на localhost (Local Network Access) — в режиме CSP эту проверку выключаем.
+const browser = await chromium.launch({
+  executablePath: '/usr/bin/google-chrome',
+  args: ['--no-sandbox', ...(CSP ? ['--disable-features=LocalNetworkAccessChecks'] : [])],
+});
 const errors = [];
 const watch = (page, tag) => {
   page.on('console', (m) => m.type() === 'error' && errors.push(`[${tag}] ${m.text()}`));
   page.on('pageerror', (e) => errors.push(`[${tag}] pageerror ${e.message}`));
 };
 
-const desktop = await browser.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });
+const desktop = await context({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });
 const page = await desktop.newPage();
 watch(page, 'desktop');
 const shot = (p, name, full = false) => p.screenshot({ path: `${OUT}/${name}.png`, fullPage: full });
@@ -122,7 +148,7 @@ await shot(page, '12-subscriptions');
 
 step('телефон: вход по QR-ссылке');
 const nsec = (await (await import('node:fs/promises')).readFile(backupPath, 'utf8')).match(/nsec1\w+/)[0];
-const phone = await browser.newContext({
+const phone = await context({
   viewport: { width: 390, height: 844 },
   deviceScaleFactor: 2,
   isMobile: true,

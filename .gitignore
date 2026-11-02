@@ -6,3 +6,4 @@ public/legacy/
 selfhost/.env
 selfhost/site/
 selfhost/site.new/
+__pycache__/

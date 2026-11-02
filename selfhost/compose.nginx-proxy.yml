@@ -21,6 +21,14 @@ services:
     networks: [nginx-proxy]
     ulimits:
       nofile: 65536
+    # Ограничения: узлу хватает десятков мегабайт; прав — только порты 80/443, смена
+    # пользователя для strfry и сигналы ему (KILL). MEM_LIMIT в .env — если записей станет очень много.
+    mem_limit: ${MEM_LIMIT:-512m}
+    pids_limit: 256
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE, SETUID, SETGID, KILL]
     logging:
       driver: json-file
       options:

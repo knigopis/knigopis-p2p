@@ -73,7 +73,10 @@
 - **Relay:** `relay/` — strfry 1.1.3 (собирается из исходников в `Dockerfile`), `write-policy.py` — плагин:
   - принимает только kind 0, 3, 5, 10002, 31110–31112;
   - требует тег `d` и название;
-  - режет частоту по IP: ведро 3000 событий, +2 в секунду.
+  - режет частоту по адресу: ведро 3000 событий, +2 в секунду; у IPv6 ведро на сеть /64; полные вёдра забываются;
+  - когда свободного места меньше `MIN_FREE_MB` (500), отказывает любой записи, включая синхронизацию.
+
+  Проверки — `python3 relay/test_write_policy.py`.
 
   `maxFilterLimit = 5000`. Точка входа — `run.sh`: relay плюс, если задан `UPSTREAM`, `strfry sync --dir both`
   с другими узлами раз в `SYNC_INTERVAL`. Синхронизация идёт в том же контейнере: LMDB проверяет читателей по PID.
@@ -88,6 +91,11 @@
     прокси из частных сетей, `trusted_proxies_strict` (самый правый недоверенный: левые клиент подставит сам).
     `REDIRECT_FROM` — адреса, перенаправляемые на `DOMAIN`.
   - `UPSTREAM` по умолчанию — `src/known-relays.json` на момент сборки минус свой адрес; `none` — без синхронизации.
+  - Ограничения в compose-файлах: `mem_limit` 512m (`MEM_LIMIT`), `pids_limit` 256, `no-new-privileges`,
+    `cap_drop: ALL` + `NET_BIND_SERVICE`, `SETUID`/`SETGID` (su-exec) и `KILL`: без него `start.sh` (root) не может
+    проверять `kill -0` процессы strfry — решит, что relay упал, и контейнер будет перезапускаться по кругу.
+  - CSP — в `node/routes.caddy`: всё только своё, `connect-src 'self' wss:`. Встроенных скриптов и стилей в сборке нет;
+    стили из Preact (`style={{…}}`) идут через CSSOM, CSP их не трогает.
 - **Установка узла** (`selfhost/`, инструкция — `selfhost/README.md`): по compose-файлу на случай — `compose.yml`
   (порты 80/443), `compose.proxy.yml` (за своим nginx/Caddy, `127.0.0.1:8080`; пример nginx — `nginx.conf.example`),
   `compose.nginx-proxy.yml`. В `.env` — `DOMAIN`, остальное по желанию (`.env.example`). Обновление —
@@ -139,6 +147,8 @@ npm run relay                          # два локальных relay: 7777 �
 docker build -t knigopis-node .        # образ узла целиком (strfry ~5 мин, архив repo2 ~1 мин; дальше из кеша)
 VITE_RELAYS=ws://localhost:7777,ws://localhost:7778 npm run dev
 npm run e2e                            # сквозной тест в системном Chrome (пишет данные — только локально)
+E2E_CSP=1 node e2e/flow.mjs http://localhost:5175   # то же с CSP узла — на продакшн-сборке (vite preview, VITE_RELAYS)
+python3 relay/test_write_policy.py     # проверки политики записи relay
 npm run build                          # tsc + vite build → dist/
 npm run release -- v0.3.0              # релиз на GitHub (сайт, архив); образ узла соберёт Actions
 deploy/node.sh                         # главный узел: свежий образ из ghcr.io и перезапуск
@@ -150,6 +160,8 @@ deploy/apply-caddy.sh                  # блок deploy/knigopis.caddy → /etc
 `$proxy_add_x_forwarded_for`), за Caddy и за nginx-proxy (compose-файлы как есть) — маршруты, NIP-11, WebSocket,
 редирект `REDIRECT_FROM`, relay видит адрес клиента и не верит подставленному; синхронизация двух узлов (5 с);
 падение Caddy/strfry → перезапуск; `docker stop` → код 0. Выдача сертификата acme-companion не проверялась.
+Там же (2026-11-02): ограничения контейнера — запуск во всех режимах, запись, отказ при «нехватке места»,
+перезапуск при падении, `docker stop`; полный e2e с CSP узла — без нарушений.
 Адрес клиента проверять клиентом из «публичной» сети (`docker network create --subnet 100.64.0.0/24`):
 клиент с частного адреса Docker считается доверенным прокси и подменяется адресом прокси.
 
@@ -185,6 +197,8 @@ deploy/apply-caddy.sh                  # блок deploy/knigopis.caddy → /etc
   С `{remote_host}` relay видит всех с адреса прокси и режет частоту записи всем разом. `client_ip_headers` —
   только `X-Forwarded-For` со strict: `X-Real-IP` внешний Caddy пропускает от клиента как есть.
 - **Compose v2.20 на сервере** не понимает `docker compose ps --format`.
+- **Playwright `route.fulfill`:** Chrome считает такую страницу пришедшей «из интернета» и не пускает её к `localhost`
+  (Local Network Access, `ERR_BLOCKED_BY_LOCAL_NETWORK_ACCESS_CHECKS`) — нужен `--disable-features=LocalNetworkAccessChecks`.
 - **Остановка процессов:**
   - `pkill -f <шаблон>` в Bash-команде убивает и саму оболочку (шаблон есть в её командной строке). Останавливать по PID.
   - У `npx vite` по PID умирает только обёртка `npx`, сам vite надо искать по порту: `ss -ltnp 'sport = :5174'`.
