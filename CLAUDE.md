@@ -70,7 +70,7 @@
   - `books-index.json` — для поиска по названию, грузится лениво;
   - `latest.json`.
   photo/profile/identity выкидываются. Service Worker архив не предзагружает, а кеширует по мере просмотра.
-- **Relay:** `relay/` — strfry 1.1.3, собирается из исходников в Docker. `write-policy.py` — плагин:
+- **Relay:** `relay/` — strfry 1.1.3 (собирается из исходников в `Dockerfile`), `write-policy.py` — плагин:
   - принимает только kind 0, 3, 5, 10002, 31110–31112;
   - требует тег `d` и название;
   - режет частоту по IP: ведро 3000 событий, +2 в секунду.
@@ -78,11 +78,21 @@
   `maxFilterLimit = 5000`. Точка входа — `run.sh`: relay плюс, если задан `UPSTREAM`, `strfry sync --dir both`
   с другими узлами раз в `SYNC_INTERVAL`. Синхронизация идёт в том же контейнере: LMDB проверяет читателей по PID.
   С аргументами `run.sh` просто запускает команду strfry (`export`, `sync`…).
-- **Узлы:** все одинаковые — сайт и relay (`selfhost/`, инструкция — `selfhost/README.md`).
-  - Варианты: чистый сервер (профиль `web` = свой Caddy с HTTPS), уже есть nginx/Caddy (только relay; пример —
-    `selfhost/nginx.conf.example`), за nginx-proxy + acme-companion (`compose.nginx-proxy.yml` через `COMPOSE_FILE`
-    в `.env`: Caddy без TLS; `DOMAIN` — основной адрес, `REDIRECT_FROM` — перенаправляемые на него), только статика.
-  - `selfhost/update.sh` скачивает из релиза сайт и образ relay и перезапускает узел — на сервере ничего не собирается.
+- **Узел — один образ** `ghcr.io/knigopis/knigopis-p2p/node` (с 2026-11-02): сайт, архив, strfry и Caddy в одном
+  контейнере. `Dockerfile` в корне: цель `node` (по умолчанию) и `relay` (только strfry — для разработки).
+  - `node/start.sh` пишет Caddyfile по `.env` и запускает strfry (`run.sh`, от пользователя strfry через su-exec)
+    и Caddy (root). Упал любой — контейнер выходит, Docker перезапускает. PID 1 — `tini -g`.
+  - Маршруты — `node/routes.caddy`: WebSocket и NIP-11 → strfry на `127.0.0.1:7777` (наружу не виден), `/legacy/*`
+    — честный 404, остальное — SPA. strfry получает адрес клиента в `X-Real-IP` (`{client_ip}`).
+  - Режимы: свой HTTPS (`DOMAIN`); `BEHIND_PROXY=1` — HTTP на 80, адрес клиента из `X-Forwarded-For` только от
+    прокси из частных сетей, `trusted_proxies_strict` (самый правый недоверенный: левые клиент подставит сам).
+    `REDIRECT_FROM` — адреса, перенаправляемые на `DOMAIN`.
+  - `UPSTREAM` по умолчанию — `src/known-relays.json` на момент сборки минус свой адрес; `none` — без синхронизации.
+- **Установка узла** (`selfhost/`, инструкция — `selfhost/README.md`): по compose-файлу на случай — `compose.yml`
+  (порты 80/443), `compose.proxy.yml` (за своим nginx/Caddy, `127.0.0.1:8080`; пример nginx — `nginx.conf.example`),
+  `compose.nginx-proxy.yml`. В `.env` — `DOMAIN`, остальное по желанию (`.env.example`). Обновление —
+  `docker compose pull && docker compose up -d`. Все файлы `name: knigopis`, том записей — `relay-data`.
+  Отдельные файлы, а не надстройки: Compose v2.20 (как на bizibah) не умеет `!reset` для списка портов.
   - Клиент по умолчанию пишет на свой хост и все узлы из `src/known-relays.json`; новый узел добавляется туда PR
     и в `relays.txt` бота снимков.
   - Синхронизация — сеткой без центра: в `UPSTREAM` нового узла все узлы из `known-relays.json`. Sync двусторонний,
@@ -97,8 +107,11 @@
   в `events/<2 символа>/<pubkey>.jsonl`. Надгробия остаются, kind 5 убирает только старые версии. Предохранитель: больше 5000 новых или −10% (и хотя бы −10) —
   без коммита, запуск падает; `force` в Run workflow. Восстановление — `strfry import`, подделки он отвергает
   (проверено 2026-11-02).
-- **Релиз** (`npm run release -- vX.Y.Z`, только из чистого запушенного HEAD) — три файла: `knigopis-site.tar.gz`
-  (сайт с архивом), `knigopis-legacy.tar.gz`, `knigopis-relay-image-amd64.tar.gz`.
+- **Релиз** (`npm run release -- vX.Y.Z`, только из чистого запушенного HEAD) — `knigopis-site.tar.gz` (сайт с архивом)
+  и `knigopis-legacy.tar.gz` для зеркал. Опубликованный релиз запускает `.github/workflows/node.yml`: образ узла
+  с тегами версии и `latest` (только amd64 — бесплатные ARM-машины GitHub только у публичных репозиториев;
+  кеш слоёв — gha). Пакет в реестре создаётся приватным; видимость меняется только в настройках пакета
+  под `knigopis`.
   В сборке есть `404.html` (копия `index.html`) — для статических хостингов без SPA-маршрутов.
 
 ### События Nostr (номера выбраны, свободны в реестре NIPs на 2026-10)
@@ -122,21 +135,23 @@
 
 ```sh
 npm run legacy                         # клон repo2 во временный каталог вне проекта → public/legacy → клон удаляется (~1 мин)
-docker build -t knigopis-relay:dev relay   # образ relay (~5 мин, один раз)
-npm run relay                          # два локальных relay: 7777 и 7778 (реплика, синхронизация раз в 30 с)
+npm run relay                          # два локальных relay: 7777 и 7778 (реплика, синхронизация раз в 30 с; образ — при первом запуске)
+docker build -t knigopis-node .        # образ узла целиком (strfry ~5 мин, архив repo2 ~1 мин; дальше из кеша)
 VITE_RELAYS=ws://localhost:7777,ws://localhost:7778 npm run dev
 npm run e2e                            # сквозной тест в системном Chrome (пишет данные — только локально)
 npm run build                          # tsc + vite build → dist/
-npm run release -- v0.2.0              # релиз на GitHub (сайт, архив, образ relay)
-deploy/relay-image.sh                  # собрать образ здесь, отвезти и запустить relay на bizibah
-deploy/publish.sh                      # сборка + rsync dist/ на сервер, потом dist/ удаляется
+npm run release -- v0.3.0              # релиз на GitHub (сайт, архив); образ узла соберёт Actions
+deploy/node.sh                         # главный узел: свежий образ из ghcr.io и перезапуск
+deploy/node.sh --local                 # то же, но образ собрать здесь и отвезти (без релиза / пакет приватный)
 deploy/apply-caddy.sh                  # блок deploy/knigopis.caddy → /etc/caddy/Caddyfile (validate, бэкап, reload)
 ```
 
-Проверено локально (2026-10-30): два узла из `selfhost/` синхронизируются в обе стороны через WebSocket в Caddy;
-`nginx.conf.example` проходит `nginx -t`, маршруты и WebSocket работают.
-Проверено локально (2026-11-01): вариант за nginx-proxy — маршруты, WebSocket, NIP-11, редирект корня на www,
-relay видит IP клиента. Выдача сертификата acme-companion не проверялась.
+Проверено локально (2026-11-02), образ узла: свой HTTPS; за nginx (`nginx.conf.example` и «небрежный»
+`$proxy_add_x_forwarded_for`), за Caddy и за nginx-proxy (compose-файлы как есть) — маршруты, NIP-11, WebSocket,
+редирект `REDIRECT_FROM`, relay видит адрес клиента и не верит подставленному; синхронизация двух узлов (5 с);
+падение Caddy/strfry → перезапуск; `docker stop` → код 0. Выдача сертификата acme-companion не проверялась.
+Адрес клиента проверять клиентом из «публичной» сети (`docker network create --subnet 100.64.0.0/24`):
+клиент с частного адреса Docker считается доверенным прокси и подменяется адресом прокси.
 
 Модули `src/lib` можно проверять без входа и UI: на dev-сервере в Playwright
 `page.evaluate(() => import('/src/lib/nostr.ts'))` отдаёт тот же экземпляр модуля, что у приложения.
@@ -145,16 +160,15 @@ relay видит IP клиента. Выдача сертификата acme-com
 
 - **Сервер** `root@bizibah.com` (165.227.139.115, DigitalOcean): Ubuntu 24.04, 1 vCPU, 1,9 ГБ RAM, Docker 24 / Compose v2.20,
   Caddy 2.11. На сервере много других сервисов; контейнеры слушают только `127.0.0.1`.
-- **Размещение:**
-  - relay — `/opt/knigopis/compose.yml` (= `selfhost/compose.yml` без профиля web), контейнер `knigopis-relay-1`, том `knigopis_relay-data`, порт `127.0.0.1:7777`;
-  - статика — `/var/www/knigopis-site`;
+- **Размещение** (с 2026-11-02 — образ узла; прежние статика и отдельный relay убраны):
+  - `/opt/knigopis/compose.yml` (= `selfhost/compose.proxy.yml`) и `.env` с `DOMAIN=www.knigopis.com`, контейнер
+    `knigopis-node-1` на `127.0.0.1:8080`, том `knigopis_relay-data` (тот же, что был у relay). Выкладка —
+    `deploy/node.sh`; синхронизация выключена (известный узел — он сам);
   - блок Caddy дописан в конец `/etc/caddy/Caddyfile` между маркерами `# >>> knigopis` / `# <<< knigopis <<<`:
-    `www.knigopis.com` — сайт и relay; `knigopis.com` → 301 на www; `knigopis.bizibah.com` → 301 на www, но relay
-    (WebSocket, NIP-11) по нему ещё отвечает. Там же `/sw.js` — Service Worker, который удаляет себя и кеш:
+    `www.knigopis.com` → `reverse_proxy 127.0.0.1:8080`; `knigopis.com` → 301 на www; `knigopis.bizibah.com` →
+    301 на www, но relay (WebSocket, NIP-11) по нему ещё отвечает. Там же `/sw.js` — Service Worker, который удаляет себя и кеш:
     иначе установленное приложение брало страницы из кеша и до редиректа не доходило (проверено в Chrome).
     Сниппеты `security` (без CSP) и `logs` — общие, `knigopis_relay` — наш.
-- **Маршруты на одном домене:** WebSocket → relay; `Accept: application/nostr+json` (NIP-11) → relay;
-  `/legacy/*` — статика без подмены на index.html (честный 404); остальное — SPA с `try_files … /index.html`.
 
 ## Подводные камни
 
@@ -167,9 +181,9 @@ relay видит IP клиента. Выдача сертификата acme-com
 
 - **Caddy:** матчер `header Connection *Upgrade*` чувствителен к регистру — Node/undici шлёт `connection: upgrade`
   и получал index.html. Используется `header_regexp Upgrade (?i)^websocket$`.
-- **Caddy за прокси** обязан передавать relay адрес клиента: `header_up X-Real-IP {client_ip}` плюс `trusted_proxies`
-  (`Caddyfile.nginx-proxy`). С `{remote_host}` relay видит всех с адреса прокси и режет частоту записи всем разом
-  (проверено с nginx-proxy 2026-11-01).
+- **Caddy за прокси** обязан передавать relay адрес клиента: `header_up X-Real-IP {client_ip}` плюс `trusted_proxies`.
+  С `{remote_host}` relay видит всех с адреса прокси и режет частоту записи всем разом. `client_ip_headers` —
+  только `X-Forwarded-For` со strict: `X-Real-IP` внешний Caddy пропускает от клиента как есть.
 - **Compose v2.20 на сервере** не понимает `docker compose ps --format`.
 - **Остановка процессов:**
   - `pkill -f <шаблон>` в Bash-команде убивает и саму оболочку (шаблон есть в её командной строке). Останавливать по PID.
