@@ -10,7 +10,7 @@
 - [x] Проверено локально: все режимы, адрес клиента, синхронизация, перезапуск при падении.
 - [x] Главный узел (bizibah) на образе за Caddy сервера (`deploy/node.sh`), 300 записей на месте.
 - [x] GitHub Actions: образ на каждый релиз → `ghcr.io/knigopis/knigopis-p2p/node`.
-- [ ] Релиз v0.3.0 — первая сборка образа в Actions (ещё не запускалась).
+- [x] Релиз v0.3.0: образ собран в Actions за 11 минут, теги `v0.3.0` и `latest` (2026-11-02).
 - [ ] **(вы)** Сделать пакет `node` публичным: github.com/knigopis → Packages → `knigopis-p2p/node` → Package
   settings → Change visibility (вход под `knigopis`). Без этого `docker compose pull` ни у кого не сработает,
   а главный узел обновляется через `deploy/node.sh --local`.
