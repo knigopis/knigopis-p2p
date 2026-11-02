@@ -11,9 +11,8 @@
 - [x] Главный узел (bizibah) на образе за Caddy сервера (`deploy/node.sh`), 300 записей на месте.
 - [x] GitHub Actions: образ на каждый релиз → `ghcr.io/knigopis/knigopis-p2p/node`.
 - [x] Релиз v0.3.0: образ собран в Actions за 11 минут, теги `v0.3.0` и `latest` (2026-11-02).
-- [ ] **(вы)** Сделать пакет `node` публичным: github.com/knigopis → Packages → `knigopis-p2p/node` → Package
-  settings → Change visibility (вход под `knigopis`). Без этого `docker compose pull` ни у кого не сработает,
-  а главный узел обновляется через `deploy/node.sh --local`.
+- [x] Пакет `node` публичный (2026-11-02), образ скачивается анонимно. v0.3.1 — исправление обновления сайта
+  (skipWaiting), образ собран в Actions за 8 минут. Главный узел обновляется `deploy/node.sh` (pull).
 - [ ] arm64 в образе — когда репозиторий станет публичным (ARM-машины Actions).
 
 ## Этап 0. Сохранность данных (без кода)
