@@ -91,9 +91,12 @@
     прокси из частных сетей, `trusted_proxies_strict` (самый правый недоверенный: левые клиент подставит сам).
     `REDIRECT_FROM` — адреса, перенаправляемые на `DOMAIN`.
   - `UPSTREAM` по умолчанию — `src/known-relays.json` на момент сборки минус свой адрес; `none` — без синхронизации.
-  - Ограничения в compose-файлах: `mem_limit` 512m (`MEM_LIMIT`), `pids_limit` 256, `no-new-privileges`,
-    `cap_drop: ALL` + `NET_BIND_SERVICE`, `SETUID`/`SETGID` (su-exec) и `KILL`: без него `start.sh` (root) не может
-    проверять `kill -0` процессы strfry — решит, что relay упал, и контейнер будет перезапускаться по кругу.
+  - Ограничения в compose-файлах: `mem_limit` 512m (`MEM_LIMIT`), `pids_limit` 256, `cap_drop: ALL` +
+    `NET_BIND_SERVICE`, `SETUID`/`SETGID` (su-exec) и `KILL`: без него `start.sh` (root) не может проверять `kill -0`
+    процессы strfry — решит, что relay упал, и контейнер будет перезапускаться по кругу.
+    **`no-new-privileges` не ставить:** на bizibah (Ubuntu 24.04, ядро 6.8, AppArmor) контейнер с ним не стартует —
+    `exec /sbin/tini: operation not permitted`, а локально всё проходило. 2026-11-02 это уронило главный узел.
+    Новые ограничения проверять одноразовым контейнером на самом сервере, прежде чем выкладывать.
   - CSP — в `node/routes.caddy`: всё только своё, `connect-src 'self' wss:`. Встроенных скриптов и стилей в сборке нет;
     стили из Preact (`style={{…}}`) идут через CSSOM, CSP их не трогает.
 - **Установка узла** (`selfhost/`, инструкция — `selfhost/README.md`): по compose-файлу на случай — `compose.yml`
@@ -160,7 +163,7 @@ deploy/apply-caddy.sh                  # блок deploy/knigopis.caddy → /etc
 `$proxy_add_x_forwarded_for`), за Caddy и за nginx-proxy (compose-файлы как есть) — маршруты, NIP-11, WebSocket,
 редирект `REDIRECT_FROM`, relay видит адрес клиента и не верит подставленному; синхронизация двух узлов (5 с);
 падение Caddy/strfry → перезапуск; `docker stop` → код 0. Выдача сертификата acme-companion не проверялась.
-Там же (2026-11-02): ограничения контейнера — запуск во всех режимах, запись, отказ при «нехватке места»,
+Там же (2026-11-02): ограничения контейнера (локально; `no-new-privileges` на сервере не работает, см. выше) — запуск во всех режимах, запись, отказ при «нехватке места»,
 перезапуск при падении, `docker stop`; полный e2e с CSP узла — без нарушений.
 Адрес клиента проверять клиентом из «публичной» сети (`docker network create --subnet 100.64.0.0/24`):
 клиент с частного адреса Docker считается доверенным прокси и подменяется адресом прокси.
@@ -170,7 +173,7 @@ deploy/apply-caddy.sh                  # блок deploy/knigopis.caddy → /etc
 
 ## Главный узел: www.knigopis.com на bizibah
 
-- **Сервер** `root@bizibah.com` (165.227.139.115, DigitalOcean): Ubuntu 24.04, 1 vCPU, 1,9 ГБ RAM, Docker 24 / Compose v2.20,
+- **Сервер** `root@bizibah.com` (165.227.139.115, DigitalOcean): Ubuntu 24.04, 1 vCPU, 1,9 ГБ RAM, Docker 29.8 / Compose v2.20,
   Caddy 2.11. На сервере много других сервисов; контейнеры слушают только `127.0.0.1`.
 - **Размещение** (с 2026-11-02 — образ узла; прежние статика и отдельный relay убраны):
   - `/opt/knigopis/compose.yml` (= `selfhost/compose.proxy.yml`) и `.env` с `DOMAIN=www.knigopis.com`, контейнер
