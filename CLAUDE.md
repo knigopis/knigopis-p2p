@@ -15,8 +15,6 @@
   не будет.** Домен knigopis.com (регистратор internet.bs, DNS — DigitalOcean, оплачен до 2027-01-18) и аккаунт GitHub
   `knigopis` он передал владельцу папки. Главный узел — на bizibah (см. ниже). Деплой по-прежнему должен легко
   переноситься (Docker Compose + блок для Caddy).
-  Инструкция для Ромы (узел за nginx-proxy) устарела: артефакт `6787cf61-51fa-449c-a614-9bdcedb65eff`,
-  исходник `.cache/roma-instructions.html` (не в git).
 - **DNS knigopis.com** — зона в DigitalOcean владельца: `A @` и `A www` → 165.227.139.115,
   `TXT _github-pages-challenge-knigopis` (подтверждение домена на GitHub Pages — не удалять). MX нет (был
   mx.yandex.ru; почта — в TODO). `api` и `alpha` не перенесены, с Pages адреса сняты (2026-11-02).
@@ -73,12 +71,6 @@
   `maxFilterLimit = 5000`. Точка входа — `run.sh`: relay плюс, если задан `UPSTREAM`, `strfry sync --dir both`
   с другими узлами раз в `SYNC_INTERVAL`. Синхронизация идёт в том же контейнере: LMDB проверяет читателей по PID.
   С аргументами `run.sh` просто запускает команду strfry (`export`, `sync`…).
-- **Образы ghcr.io** (сделал Рома 2026-11-01; сейчас не используются — главный узел на bizibah):
-  `.github/workflows/docker.yml` после push в `master` собирает `ghcr.io/gurov/knigopis-p2p/{relay,web}:latest`
-  (пакеты приватные), на PR — только проверочная сборка; коммиты только с документацией сборку не запускают.
-  `build/Dockerfile` — сайт, архив (клон repo2 внутри сборки) и Caddy из `selfhost/Caddyfile*`.
-  `deployments/docker-compose.prod.yml` + `./release.sh` — узел за nginx-proxy с прописанными доменами; `make up` — локально.
-  Docker 19.03 не годится: Alpine 3.14+ на нём не работает (seccomp режет `faccessat2`), нужен 20.10+.
 - **Узлы:** все одинаковые — сайт и relay (`selfhost/`, инструкция — `selfhost/README.md`).
   - Варианты: чистый сервер (профиль `web` = свой Caddy с HTTPS), уже есть nginx/Caddy (только relay; пример —
     `selfhost/nginx.conf.example`), за nginx-proxy + acme-companion (`compose.nginx-proxy.yml` через `COMPOSE_FILE`
