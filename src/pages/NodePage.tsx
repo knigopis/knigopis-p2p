@@ -3,11 +3,8 @@ import { KNOWN_RELAYS, REPO_URL } from '../lib/config';
 // Короткая инструкция для тех, кто хочет поднять узел. Подробная — selfhost/README.md;
 // команды здесь должны с ней совпадать.
 export function NodePage() {
-  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const here = `${proto}//${location.host}`;
   const readme = `${REPO_URL}/blob/master/selfhost/README.md`;
-  // Синхронизация двусторонняя: новый узел, связанный со всеми известными, замыкает сетку сам.
-  const upstream = (KNOWN_RELAYS.length ? KNOWN_RELAYS : [here]).join(' ');
+  const raw = REPO_URL.replace('https://github.com/', 'https://raw.githubusercontent.com/');
 
   return (
     <div class="form-narrow">
@@ -26,33 +23,32 @@ export function NodePage() {
       </ul>
 
       <h3>Установка</h3>
+      <p>Узел — это один Docker-образ: сайт, архив старой Книгописи и relay. Если порты 80 и 443 на сервере свободны:</p>
       <pre>
         <code>
-          {`git clone ${REPO_URL}.git /opt/knigopis
-cd /opt/knigopis/selfhost
-cp .env.example .env
-./update.sh`}
+          {`mkdir -p /opt/knigopis && cd /opt/knigopis
+curl -fsSLo compose.yml ${raw}/master/selfhost/compose.yml
+echo "DOMAIN=books.example.org" > .env
+docker compose up -d`}
         </code>
       </pre>
       <p>
-        В файле <code>.env</code> укажите свой домен (<code>DOMAIN</code>) и узлы, с которыми синхронизироваться, — все
-        известные, через пробел:
+        Вместо <code>books.example.org</code> — адрес вашего узла. Сертификат HTTPS узел получит сам. Если на сервере уже
+        работает nginx или Caddy, возьмите <code>compose.proxy.yml</code>: узел будет слушать <code>127.0.0.1:8080</code>,
+        а ваш веб-сервер — передавать ему запросы. Есть и вариант для nginx-proxy — всё это в{' '}
+        <a href={readme}>инструкции</a>.
       </p>
+      <p>Обновление — одной командой, её можно поставить в cron:</p>
       <pre>
-        <code>{`UPSTREAM=${upstream}`}</code>
+        <code>{`cd /opt/knigopis && docker compose pull && docker compose up -d`}</code>
       </pre>
-      <p>
-        Тогда исчезновение любого узла не прервёт обмен записями между остальными. На других узлах ничего менять не
-        нужно: синхронизация идёт в обе стороны.
-      </p>
-      <p>
-        <code>update.sh</code> скачает готовый сайт и relay из релиза и запустит их; сертификат HTTPS получится сам. Если
-        на сервере уже работает nginx или Caddy, в инструкции есть готовый конфиг для него.
-      </p>
 
       <h3>Дальше</h3>
       <ol>
-        <li>Первая синхронизация заберёт все записи — это минуты. Потом узлы обмениваются ими сами.</li>
+        <li>
+          Узел сам синхронизируется со всеми известными узлами: первая синхронизация заберёт все записи за минуты, потом
+          узлы обмениваются ими в обе стороны. На других узлах ничего менять не нужно.
+        </li>
         <li>
           Пришлите адрес своего узла (pull request в <code>src/known-relays.json</code>) — тогда все читатели начнут
           сохранять записи и на него.

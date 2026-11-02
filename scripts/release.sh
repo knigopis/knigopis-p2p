@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# Выпускает релиз на GitHub: всё, что нужно узлу, чтобы ничего не собирать.
+# Выпускает релиз на GitHub.
 #
-#   scripts/release.sh v0.2.0
+#   scripts/release.sh v0.3.0
 #
-# Файлы релиза:
-#   knigopis-site.tar.gz              — собранный сайт вместе с архивом (selfhost/update.sh)
-#   knigopis-legacy.tar.gz            — только архив старой Книгописи (public/legacy)
-#   knigopis-relay-image-amd64.tar.gz — образ relay (docker load)
+# Файлы релиза — для зеркал сайта на статическом хостинге:
+#   knigopis-site.tar.gz   — собранный сайт вместе с архивом
+#   knigopis-legacy.tar.gz — только архив старой Книгописи (public/legacy)
+# Образ узла по опубликованному релизу собирает GitHub Actions (.github/workflows/node.yml)
+# и кладёт в ghcr.io/knigopis/knigopis-p2p/node с тегами версии и latest.
 #
 # Код должен быть закоммичен и запушен: тег ставится на HEAD.
 set -euo pipefail
@@ -34,15 +35,11 @@ npm run build
 tar -czf "$out/knigopis-site.tar.gz" -C dist .
 tar -czf "$out/knigopis-legacy.tar.gz" -C public legacy
 
-echo "==> Образ relay"
-docker build -q -t knigopis-relay:latest relay
-docker save knigopis-relay:latest | gzip > "$out/knigopis-relay-image-amd64.tar.gz"
-
 ls -lh "$out"
 
 echo "==> Релиз $TAG"
 gh release create "$TAG" -R "$REPO" --target "$(git rev-parse HEAD)" --title "$TAG" \
-	--notes "Узел Книгописи: см. selfhost/README.md. Архив старой Книгописи — состояние repo2.knigopis.com на $(jq -r .builtAt public/legacy/index.json | cut -c1-10) (коммит $(jq -r .commit public/legacy/index.json | cut -c1-8))." \
+	--notes "Узел Книгописи — образ ghcr.io/knigopis/knigopis-p2p/node:$TAG, см. selfhost/README.md. Архив старой Книгописи — состояние repo2.knigopis.com на $(jq -r .builtAt public/legacy/index.json | cut -c1-10) (коммит $(jq -r .commit public/legacy/index.json | cut -c1-8))." \
 	"$out"/*.tar.gz
 git fetch -q --tags
 echo "Готово."

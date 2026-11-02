@@ -1,47 +1,27 @@
-# Узел Книгописи: relay (strfry) и, с профилем web, Caddy со статикой сайта.
-# Как пользоваться — selfhost/README.md. Настройки — в .env рядом (см. .env.example).
+# Узел Книгописи на чистом сервере: порты 80 и 443 свободны, HTTPS Caddy получит сам.
+# Рядом нужен .env со строкой DOMAIN=<адрес узла> (см. .env.example).
+#
+#   docker compose up -d                              запуск
+#   docker compose pull && docker compose up -d       обновление
+#
+# На сервере уже есть nginx или Caddy — compose.proxy.yml; есть nginx-proxy —
+# compose.nginx-proxy.yml. Подробно — README.md.
 name: knigopis
 
 services:
-  relay:
-    image: knigopis-relay:latest
-    build: ../relay
+  node:
+    image: ghcr.io/knigopis/knigopis-p2p/node:latest
     restart: unless-stopped
-    environment:
-      # Другие узлы для синхронизации, через пробел. Пусто — узел ни с кем не синхронизируется.
-      UPSTREAM: ${UPSTREAM:-}
-      SYNC_INTERVAL: ${SYNC_INTERVAL:-600}
-    # Только localhost: снаружи relay доступен через веб-сервер на том же домене.
+    env_file: .env
     ports:
-      - "127.0.0.1:${RELAY_PORT:-7777}:7777"
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
     volumes:
       - relay-data:/app/strfry-db
+      - caddy-data:/data
     ulimits:
       nofile: 65536
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: "3"
-
-  # Свой Caddy с автоматическим HTTPS — для сервера, где 80/443 свободны.
-  # Если веб-сервер уже есть, этот сервис не включайте (уберите COMPOSE_PROFILES из .env).
-  web:
-    image: caddy:2
-    profiles: [web]
-    restart: unless-stopped
-    depends_on: [relay]
-    environment:
-      DOMAIN: ${DOMAIN:-localhost}
-    ports:
-      - "${HTTP_PORT:-80}:80"
-      - "${HTTPS_PORT:-443}:443"
-      - "${HTTPS_PORT:-443}:443/udp"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./site:/srv:ro
-      - caddy-data:/data
-      - caddy-config:/config
     logging:
       driver: json-file
       options:
@@ -51,4 +31,3 @@ services:
 volumes:
   relay-data:
   caddy-data:
-  caddy-config:

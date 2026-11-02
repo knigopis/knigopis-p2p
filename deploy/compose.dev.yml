@@ -1,14 +1,29 @@
-# Для разработки, поверх selfhost/compose.yml (npm run relay): образ :dev и вторая
-# копия relay на 7778 — «реплика», которая раз в 30 секунд синхронизируется
-# с основным. Так проверяются и работа с несколькими relay, и синхронизация.
+# Два relay для разработки (npm run relay): основной на 7777 и «реплика» на 7778,
+# которая раз в 30 секунд синхронизируется с основным. Так проверяются и работа
+# с несколькими relay, и синхронизация.
 #   VITE_RELAYS=ws://localhost:7777,ws://localhost:7778 npm run dev
+# Образ — relay из общего Dockerfile (собирается при первом запуске, ~5 мин).
+name: knigopis-dev
+
+x-relay: &relay
+  image: knigopis-relay:dev
+  build:
+    context: ..
+    target: relay
+  restart: unless-stopped
+  ulimits:
+    nofile: 65536
+
 services:
   relay:
-    image: knigopis-relay:dev
+    <<: *relay
+    ports:
+      - "127.0.0.1:7777:7777"
+    volumes:
+      - relay-data:/app/strfry-db
 
   replica:
-    image: knigopis-relay:dev
-    restart: unless-stopped
+    <<: *relay
     environment:
       UPSTREAM: ws://relay:7777
       SYNC_INTERVAL: 30
@@ -16,8 +31,7 @@ services:
       - "127.0.0.1:7778:7777"
     volumes:
       - replica-data:/app/strfry-db
-    ulimits:
-      nofile: 65536
 
 volumes:
+  relay-data:
   replica-data:

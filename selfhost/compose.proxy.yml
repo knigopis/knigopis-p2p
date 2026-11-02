@@ -1,0 +1,29 @@
+# Узел Книгописи за уже работающим веб-сервером (nginx, Caddy): тот держит HTTPS
+# и передаёт сюда все запросы, включая WebSocket. Узел слушает 127.0.0.1:8080
+# (порт — PORT в .env). Примеры для nginx и Caddy — в README.md.
+#
+#   docker compose up -d                              запуск
+#   docker compose pull && docker compose up -d       обновление
+name: knigopis
+
+services:
+  node:
+    image: ghcr.io/knigopis/knigopis-p2p/node:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      BEHIND_PROXY: "1"
+    ports:
+      - "127.0.0.1:${PORT:-8080}:80"
+    volumes:
+      - relay-data:/app/strfry-db
+    ulimits:
+      nofile: 65536
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  relay-data:

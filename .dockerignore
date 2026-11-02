@@ -1,0 +1,11 @@
+# Контекст сборки — корень репозитория (Dockerfile). Лишнее не отправляем:
+# архив собирается внутри образа из repo2, сайт — из исходников.
+.git
+node_modules
+dist
+.cache
+public/legacy
+selfhost/.env
+selfhost/site
+selfhost/site.new
+e2e

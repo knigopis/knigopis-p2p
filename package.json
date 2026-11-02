@@ -8,8 +8,8 @@
     "build": "tsc --noEmit && vite build && cp dist/index.html dist/404.html",
     "preview": "vite preview",
     "legacy": "scripts/legacy.sh",
-    "relay": "docker compose -f selfhost/compose.yml -f deploy/compose.dev.yml up -d",
-    "relay:stop": "docker compose -f selfhost/compose.yml -f deploy/compose.dev.yml down",
+    "relay": "docker compose -f deploy/compose.dev.yml up -d",
+    "relay:stop": "docker compose -f deploy/compose.dev.yml down",
     "e2e": "node e2e/flow.mjs",
     "release": "scripts/release.sh"
   },
