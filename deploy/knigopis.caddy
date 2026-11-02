@@ -1,8 +1,8 @@
 # >>> knigopis — блок целиком управляется deploy/apply-caddy.sh >>>
-# Главный узел Книгописи: PWA и relay Nostr на одном домене. Основной адрес —
-# www.knigopis.com; knigopis.bizibah.com — прежний адрес демо, тот же сайт и relay
-# (ключи читателей привязаны к адресу, поэтому он не перенаправляется). Корень
-# knigopis.com перенаправляется на www, как у старого сайта.
+# Главный узел Книгописи: PWA и relay Nostr на одном домене — www.knigopis.com.
+# Корень knigopis.com перенаправляется на www, как у старого сайта. Прежний адрес
+# демо knigopis.bizibah.com тоже перенаправляется (с 2026-11-02), но relay по нему
+# ещё отвечает — на случай старых списков серверов.
 #
 #   /var/www/knigopis-site — собранная PWA и архив старой Книгописи
 #                            (deploy/publish.sh, rsync --delete).
@@ -12,10 +12,7 @@
 # всё остальное — статика. Ключ при входе по QR-ссылке идёт после #, поэтому
 # в access.log не попадает.
 
-www.knigopis.com, knigopis.bizibah.com {
-	import security
-	import logs
-
+(knigopis_relay) {
 	# Без учёта регистра: Node/undici шлёт «connection: upgrade» строчными,
 	# и привычный матчер header Connection *Upgrade* его пропускает.
 	@relay header_regexp Upgrade (?i)^websocket$
@@ -30,6 +27,12 @@ www.knigopis.com, knigopis.bizibah.com {
 	handle @nip11 {
 		reverse_proxy 127.0.0.1:7777
 	}
+}
+
+www.knigopis.com {
+	import security
+	import logs
+	import knigopis_relay
 
 	# Архив не меняется; отсутствующий файл — честный 404, без подмены на index.html.
 	handle /legacy/* {
@@ -60,5 +63,30 @@ knigopis.com {
 	import security
 	import logs
 	redir https://www.knigopis.com{uri} permanent
+}
+
+knigopis.bizibah.com {
+	import security
+	import logs
+	import knigopis_relay
+
+	# Установленное приложение берёт страницы из кеша Service Worker и до редиректа
+	# не доходит. Браузер сам перепроверяет /sw.js, получает этот — и он удаляет
+	# себя и кеш, а вкладки перезагружает: тогда срабатывает редирект ниже.
+	handle /sw.js {
+		header Content-Type "text/javascript; charset=utf-8"
+		header Cache-Control "no-cache"
+		respond `self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => event.waitUntil((async () => {
+	for (const key of await caches.keys()) await caches.delete(key);
+	await self.registration.unregister();
+	for (const client of await self.clients.matchAll({ type: 'window' })) client.navigate(client.url);
+})()));
+` 200
+	}
+
+	handle {
+		redir https://www.knigopis.com{uri} permanent
+	}
 }
 # <<< knigopis <<<

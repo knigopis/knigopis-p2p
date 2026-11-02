@@ -1,7 +1,7 @@
 # knigopis-p2p
 
 Переделка knigopis.com (список прочитанных книг) так, чтобы сайт не зависел от одного хостинга и сторонних входов.
-Статус: **работает на https://www.knigopis.com** (с 2026-11-02; прежний адрес демо https://knigopis.bizibah.com — тот же узел). План и открытые вопросы — в `TODO.md`.
+Статус: **работает на https://www.knigopis.com** (с 2026-11-02; прежний адрес демо knigopis.bizibah.com перенаправляется туда). План и открытые вопросы — в `TODO.md`.
 Код: https://github.com/gurov/knigopis-p2p (приватный до конца настройки, потом станет публичным; ветка `master`).
 
 ## Контекст
@@ -148,8 +148,10 @@ relay видит IP клиента. Выдача сертификата acme-com
   - relay — `/opt/knigopis/compose.yml` (= `selfhost/compose.yml` без профиля web), контейнер `knigopis-relay-1`, том `knigopis_relay-data`, порт `127.0.0.1:7777`;
   - статика — `/var/www/knigopis-site`;
   - блок Caddy дописан в конец `/etc/caddy/Caddyfile` между маркерами `# >>> knigopis` / `# <<< knigopis <<<`:
-    `www.knigopis.com, knigopis.bizibah.com` — один сайт и relay (bizibah не перенаправляется: там ключи тех,
-    кто входил на демо); `knigopis.com` → 301 на www. Сниппеты `security` (без CSP) и `logs` — общие.
+    `www.knigopis.com` — сайт и relay; `knigopis.com` → 301 на www; `knigopis.bizibah.com` → 301 на www, но relay
+    (WebSocket, NIP-11) по нему ещё отвечает. Там же `/sw.js` — Service Worker, который удаляет себя и кеш:
+    иначе установленное приложение брало страницы из кеша и до редиректа не доходило (проверено в Chrome).
+    Сниппеты `security` (без CSP) и `logs` — общие, `knigopis_relay` — наш.
 - **Маршруты на одном домене:** WebSocket → relay; `Accept: application/nostr+json` (NIP-11) → relay;
   `/legacy/*` — статика без подмены на index.html (честный 404); остальное — SPA с `try_files … /index.html`.
 
