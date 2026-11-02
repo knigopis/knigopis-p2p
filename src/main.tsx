@@ -55,10 +55,23 @@ effect(() => {
   });
 });
 
-function ScrollToTop() {
+// Service Worker сам проверяет обновления только при полной загрузке страницы, и вкладка,
+// открытая часами, жила на старой версии. Поэтому проверяем и при переходах по сайту, не чаще
+// раза в 10 минут. Нашлась новая версия — страница перезагрузится (autoUpdate) сразу после
+// перехода, и недописанная форма не пропадёт: с неё уже ушли.
+let swRegistration: ServiceWorkerRegistration | undefined;
+let lastUpdateCheck = 0;
+function checkForUpdate() {
+  if (!swRegistration || !navigator.onLine || Date.now() - lastUpdateCheck < 10 * 60 * 1000) return;
+  lastUpdateCheck = Date.now();
+  swRegistration.update().catch(() => {});
+}
+
+function OnNavigate() {
   const { path } = useLocation();
   useEffect(() => {
     if (!location.hash) window.scrollTo(0, 0);
+    checkForUpdate();
   }, [path]);
   return null;
 }
@@ -66,7 +79,7 @@ function ScrollToTop() {
 function App() {
   return (
     <LocationProvider>
-      <ScrollToTop />
+      <OnNavigate />
       <Navbar />
       <div class="container main-content">
         <Router>
@@ -98,4 +111,10 @@ render(<App />, document.getElementById('app')!);
 // Новая версия сайта применяется сразу: когда Service Worker скачал её, страница
 // перезагружается. Без этого после выкладки читатель видел старую версию до
 // второго обновления страницы.
-registerSW({ immediate: true });
+registerSW({
+  immediate: true,
+  onRegisteredSW(_url, registration) {
+    swRegistration = registration;
+    lastUpdateCheck = Date.now(); // при загрузке страницы браузер проверил сам
+  },
+});
