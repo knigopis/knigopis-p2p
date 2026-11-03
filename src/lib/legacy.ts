@@ -96,7 +96,12 @@ export interface LegacyLatestFile {
   items: LegacyLatest[];
 }
 
-export const legacyLatest = () => getJson<LegacyLatestFile>('/legacy/latest.json');
+// До v0.4.0 файл был просто массивом книг — такой может ещё лежать в кеше Service Worker
+// (StaleWhileRevalidate отдаёт старую копию, пока качает новую).
+export const legacyLatest = async (): Promise<LegacyLatestFile> => {
+  const data = await getJson<LegacyLatestFile | LegacyLatest[]>('/legacy/latest.json');
+  return Array.isArray(data) ? { users: 0, books: 0, items: data } : data;
+};
 
 export function norm(s: string): string {
   return s.toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();

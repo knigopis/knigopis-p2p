@@ -69,7 +69,7 @@ function MovePanel({ archive }: { archive: LegacyLatestFile | undefined }) {
           Найти
         </button>
       </form>
-      {archive && (
+      {archive && archive.users > 0 && (
         <p class="move-stats">
           В архиве {plural(archive.users, ['читатель', 'читателя', 'читателей'])} и{' '}
           {plural(archive.books, ['книга', 'книги', 'книг'])}
