@@ -58,7 +58,7 @@ await shot(page, '01-home', true);
 step('старая ссылка v1 → архив');
 await page.goto(BASE + '/#/lucius/books?u=83820536-yandex');
 await page.waitForURL('**/archive/83820536-yandex');
-await page.getByText('Список прочитанных книг пользователя lucius').waitFor();
+await page.getByRole('heading', { name: 'lucius', exact: true }).waitFor();
 await page.waitForTimeout(800);
 await shot(page, '02-archive-desktop');
 
@@ -99,7 +99,7 @@ await page.locator('.book-group').first().waitFor();
 const myUrl = page.url();
 await page.waitForTimeout(500);
 await shot(page, '07-mybooks-desktop');
-console.log('    книг в списке:', await page.locator('.books-list > li').count());
+console.log('    книг в списке:', await page.locator('.entries > li').count());
 
 step('добавить книгу');
 await page.goto(BASE + '/book/add');
@@ -115,7 +115,7 @@ step('редактировать и удалить');
 const row = page.locator('li', { hasText: 'Проверочная книга' });
 await row.hover();
 await shot(page, '08b-hover-actions');
-await row.getByRole('link', { name: '[редактировать]' }).click();
+await row.getByRole('link', { name: 'редактировать' }).click();
 await page.getByRole('heading', { name: 'Редактирование записи' }).waitFor();
 await page.waitForFunction(() => document.querySelector('#book-title')?.value === 'Проверочная книга');
 page.once('dialog', (d) => d.accept());
@@ -126,7 +126,7 @@ console.log('    после удаления видна?', await page.getByText(
 
 step('желания');
 await page.goto(myUrl + '/wishes');
-await page.locator('.books-list > li').first().waitFor();
+await page.locator('.entries > li').first().waitFor();
 await shot(page, '09-wishes');
 
 step('архив: уже перенесено');

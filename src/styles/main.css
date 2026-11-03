@@ -1,18 +1,32 @@
 /*
- * Книгопись. Вид — как у v1 (Bootstrap 3 + bootstrap-theme + css/main.css),
- * но без Bootstrap и jQuery: повторены только нужные куски. Плюс адаптивность:
- * меню-«гамбургер», годы на телефоне — лентой сверху, действия с книгой видны
- * без наведения мыши.
+ * Книгопись. Своя небольшая система стилей, без Bootstrap.
+ * От v1 остались тёмная шапка с текстурой, логотип и устройство страниц.
+ * Шрифты: Literata — заголовки и названия книг (свой файл, OFL, см. public/fonts),
+ * системный — всё остальное. Адаптивность: меню-«гамбургер», годы на телефоне —
+ * лентой сверху, действия с книгой видны без наведения мыши.
  */
 
+@font-face {
+  font-family: 'Literata';
+  src: url('/fonts/literata.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --text: #333;
-  --muted: #777;
-  --link: #337ab7;
-  --link-hover: #23527c;
-  --accent: #563d7c;
-  --border: #ddd;
-  --light: #eee;
+  --serif: 'Literata', Georgia, 'Noto Serif', serif;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --text: #1f2328;
+  --text-2: #474d54;
+  --muted: #697077;
+  --line: #e8e6e1;
+  --line-strong: #d5d2cb;
+  --surface: #f7f5f1;
+  --link: #2a6db0;
+  --link-hover: #1d5189;
+  --primary: #2a6db0;
+  --primary-dark: #22598f;
   --navbar-h: 50px;
   --chips-h: 0px;
 }
@@ -29,9 +43,9 @@ html {
 
 body {
   margin: 0;
-  font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
-  font-size: 14px;
-  line-height: 1.42857;
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.55;
   color: var(--text);
   background: #fff;
 }
@@ -48,32 +62,40 @@ a:focus {
 
 h1,
 h2,
-h3,
-h4 {
-  font-family: inherit;
-  font-weight: 500;
-  line-height: 1.1;
+h3 {
+  font-family: var(--serif);
+  font-weight: 600;
   color: inherit;
+  letter-spacing: -0.005em;
 }
 h1 {
-  font-size: 36px;
-  margin: 20px 0 10px;
+  margin: 24px 0 12px;
+  font-size: 34px;
+  line-height: 1.15;
+}
+h2 {
+  margin: 28px 0 12px;
+  font-size: 24px;
+  line-height: 1.25;
 }
 h3 {
-  font-size: 24px;
-  margin: 20px 0 10px;
+  margin: 20px 0 8px;
+  font-size: 20px;
+  line-height: 1.3;
 }
 h4 {
-  font-size: 18px;
-  margin: 10px 0;
+  margin: 12px 0 6px;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
 }
 p {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
 }
 hr {
-  margin: 20px 0;
+  margin: 24px 0;
   border: 0;
-  border-top: 1px solid var(--light);
+  border-top: 1px solid var(--line);
 }
 small {
   font-size: 85%;
@@ -86,25 +108,25 @@ sup {
   top: -0.5em;
 }
 code {
-  padding: 2px 4px;
-  font-size: 90%;
-  color: #c7254e;
-  background: #f9f2f4;
+  padding: 1px 5px;
+  font-size: 88%;
+  color: #b0284d;
+  background: #f8f0f2;
   border-radius: 4px;
   word-break: break-all;
 }
 pre {
   display: block;
-  margin: 0 0 10px;
-  padding: 9.5px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
   overflow-x: auto;
   font-family: Menlo, Consolas, monospace;
-  font-size: 13px;
-  line-height: 1.42857;
-  color: #333;
-  background: #f5f5f5;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
 }
 pre code {
   padding: 0;
@@ -120,10 +142,10 @@ pre code {
   text-align: center;
 }
 .text-success {
-  color: #3c763d;
+  color: #2e7d32;
 }
 .text-danger {
-  color: #a94442;
+  color: #b3261e;
 }
 .nowrap {
   white-space: nowrap;
@@ -139,7 +161,7 @@ pre code {
 .container {
   width: 100%;
   margin: 0 auto;
-  padding: 0 15px;
+  padding: 0 20px;
 }
 @media (min-width: 768px) {
   .container {
@@ -153,7 +175,12 @@ pre code {
 }
 @media (min-width: 1200px) {
   .container {
-    max-width: 1170px;
+    max-width: 1140px;
+  }
+}
+@media (max-width: 767px) {
+  .container {
+    padding: 0 16px;
   }
 }
 
@@ -161,13 +188,14 @@ pre code {
   min-height: 300px;
 }
 
-/* --- Шапка (v1: navbar-inverse + текстура) --- */
+/* --- Шапка (как в v1: тёмная, с текстурой) --- */
 
 .navbar {
   position: sticky;
   top: 0;
   z-index: 1000;
   min-height: var(--navbar-h);
+  font-size: 16px;
   background: #3a3f44 url('/random_grey_variations.png') repeat;
   border-bottom: 1px solid #080808;
 }
@@ -178,7 +206,7 @@ pre code {
 }
 .navbar-brand {
   display: block;
-  padding: 4px 15px 4px 0;
+  padding: 4px 16px 4px 0;
 }
 .navbar-brand img {
   display: block;
@@ -191,7 +219,7 @@ pre code {
   padding: 9px 10px;
   background: transparent;
   border: 1px solid #333;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
 }
 .navbar-toggle:hover,
@@ -231,9 +259,9 @@ pre code {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 15px;
+  padding: 15px 13px;
   line-height: 20px;
-  color: #9d9d9d;
+  color: #b9bdc1;
   background: none;
   border: 0;
   font: inherit;
@@ -251,7 +279,7 @@ pre code {
   background: rgba(0, 0, 0, 0.35);
 }
 .navbar .user-nickname {
-  font-weight: bold;
+  font-weight: 600;
   max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -271,39 +299,39 @@ pre code {
   top: 100%;
   right: 0;
   z-index: 1000;
-  min-width: 180px;
-  margin: 2px 0 0;
-  padding: 5px 0;
+  min-width: 200px;
+  margin: 4px 0 0;
+  padding: 6px 0;
   list-style: none;
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 .dropdown-menu a,
 .dropdown-menu button {
   display: block;
   width: 100%;
-  padding: 3px 20px;
-  color: #333;
+  padding: 7px 18px;
+  color: var(--text);
   white-space: nowrap;
   text-align: left;
   background: none;
   border: 0;
   font: inherit;
-  line-height: 1.42857;
+  line-height: 1.5;
   cursor: pointer;
 }
 .dropdown-menu a:hover,
 .dropdown-menu button:hover {
-  color: #262626;
+  color: var(--text);
   text-decoration: none;
-  background: linear-gradient(#f5f5f5, #e8e8e8);
+  background: var(--surface);
 }
 .dropdown-menu .divider {
   height: 1px;
-  margin: 9px 0;
-  background: #e5e5e5;
+  margin: 6px 0;
+  background: var(--line);
 }
 
 @media (max-width: 767px) {
@@ -319,7 +347,7 @@ pre code {
     flex-basis: 100%;
     flex-direction: column;
     align-items: stretch;
-    margin: 0 -15px;
+    margin: 0 -16px;
     padding: 0 0 8px;
     border-top: 1px solid #101010;
   }
@@ -335,7 +363,7 @@ pre code {
   }
   .navbar-nav > li > a,
   .navbar-nav > li > button {
-    padding: 11px 15px;
+    padding: 12px 16px;
     width: 100%;
   }
   /* На телефоне пункты пользователя видны сразу, без выпадающего меню. */
@@ -357,8 +385,8 @@ pre code {
   }
   .dropdown-menu a,
   .dropdown-menu button {
-    padding: 11px 15px 11px 41px;
-    color: #9d9d9d;
+    padding: 12px 16px 12px 42px;
+    color: #b9bdc1;
   }
   .dropdown-menu a:hover,
   .dropdown-menu button:hover {
@@ -370,176 +398,105 @@ pre code {
   }
 }
 
-/* --- Jumbotron и преимущества --- */
-
-.jumbotron {
-  margin: 15px 0 30px;
-  padding: 48px 60px;
-  text-align: center;
-  background: var(--light);
-  border-radius: 6px;
-}
-.jumbotron h1 {
-  margin-top: 0;
-  font-size: 63px;
-}
-.jumbotron p {
-  margin-bottom: 15px;
-  font-size: 21px;
-  font-weight: 200;
-}
-.jumbotron .actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin: 20px 0 0;
-}
-@media (max-width: 767px) {
-  .jumbotron {
-    padding: 24px 16px;
-  }
-  .jumbotron h1 {
-    font-size: 34px;
-  }
-  .jumbotron p {
-    font-size: 17px;
-  }
-  .jumbotron .actions .btn {
-    flex: 1 1 100%;
-    white-space: normal;
-  }
-}
-
-.features {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0 30px;
-  text-align: center;
-}
-@media (min-width: 768px) {
-  .features {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (min-width: 992px) {
-  .features {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-.features h4 {
-  margin-top: 20px;
-}
-
-.list-inline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  margin: 0 0 10px;
-  padding: 0;
-  list-style: none;
-}
-.home-section {
-  margin-top: 30px;
-}
-.latest-books {
-  padding-left: 20px;
-}
-.latest-books li {
-  margin-bottom: 4px;
-}
-
-/* --- Кнопки (bootstrap-theme: градиенты) --- */
+/* --- Кнопки --- */
 
 .btn {
-  display: inline-block;
-  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 16px;
   font: inherit;
-  font-size: 14px;
-  line-height: 1.42857;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.35;
   text-align: center;
   white-space: nowrap;
   vertical-align: middle;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   user-select: none;
-  text-shadow: 0 1px 0 #fff;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    0 1px 1px rgba(0, 0, 0, 0.075);
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 }
 .btn:hover,
 .btn:focus {
   text-decoration: none;
 }
+.btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
 .btn:active {
-  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.12);
 }
 .btn[disabled] {
-  opacity: 0.65;
+  opacity: 0.6;
   cursor: not-allowed;
   box-shadow: none;
 }
 .btn-default {
-  color: #333;
-  background: linear-gradient(#fff, #e0e0e0);
-  border-color: #ccc;
+  color: var(--text);
+  background: #fff;
+  border-color: var(--line-strong);
 }
 .btn-default:hover,
 .btn-default:focus {
-  color: #333;
-  background: #e0e0e0;
-  border-color: #adadad;
+  color: var(--text);
+  background: var(--surface);
+  border-color: #b9b5ac;
 }
 .btn-primary,
 .btn-danger,
 .btn-success {
   color: #fff;
-  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
 }
 .btn-primary {
-  background: linear-gradient(#337ab7, #265a88);
-  border-color: #245580;
+  background: var(--primary);
+  border-color: var(--primary);
 }
 .btn-primary:hover,
 .btn-primary:focus {
   color: #fff;
-  background: #265a88;
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
 }
 .btn-danger {
-  background: linear-gradient(#d9534f, #c12e2a);
-  border-color: #b92c28;
+  background: #c9302c;
+  border-color: #c9302c;
 }
 .btn-danger:hover,
 .btn-danger:focus {
   color: #fff;
-  background: #c12e2a;
+  background: #a82723;
+  border-color: #a82723;
 }
 .btn-success {
-  background: linear-gradient(#5cb85c, #419641);
-  border-color: #3e8f3e;
+  background: #3d8b3d;
+  border-color: #3d8b3d;
 }
 .btn-success:hover,
 .btn-success:focus {
   color: #fff;
-  background: #419641;
+  background: #2f6d2f;
+  border-color: #2f6d2f;
 }
 .btn-lg {
-  padding: 10px 16px;
+  padding: 12px 24px;
   font-size: 18px;
-  line-height: 1.3333;
-  border-radius: 6px;
+  border-radius: 10px;
 }
 .btn-sm {
-  padding: 5px 10px;
-  font-size: 12px;
-  border-radius: 3px;
+  padding: 5px 11px;
+  font-size: 14px;
+  border-radius: 6px;
 }
 .btn-xs {
-  padding: 1px 5px;
-  font-size: 12px;
-  border-radius: 3px;
+  padding: 2px 7px;
+  font-size: 13px;
+  border-radius: 5px;
 }
 .btn-link {
   padding: 0;
@@ -549,7 +506,6 @@ pre code {
   box-shadow: none;
   font: inherit;
   cursor: pointer;
-  text-shadow: none;
 }
 .btn-link:hover {
   color: var(--link-hover);
@@ -559,47 +515,50 @@ pre code {
 /* --- Формы --- */
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 18px;
 }
 label {
   display: inline-block;
   max-width: 100%;
-  margin-bottom: 5px;
-  font-weight: 700;
+  margin-bottom: 6px;
+  font-size: 16px;
+  font-weight: 600;
 }
 .form-control {
   display: block;
   width: 100%;
-  height: 34px;
-  padding: 6px 12px;
+  height: 44px;
+  padding: 9px 12px;
   font: inherit;
-  font-size: 14px;
-  line-height: 1.42857;
-  color: #555;
+  /* Не меньше 16px: иначе iOS увеличивает страницу при фокусе. */
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--text);
   background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
   transition:
-    border-color ease-in-out 0.15s,
-    box-shadow ease-in-out 0.15s;
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.form-control::placeholder {
+  color: #9a9fa4;
 }
 .form-control:focus {
-  border-color: #66afe9;
+  border-color: var(--primary);
   outline: 0;
-  box-shadow:
-    inset 0 1px 1px rgba(0, 0, 0, 0.075),
-    0 0 8px rgba(102, 175, 233, 0.6);
+  box-shadow: 0 0 0 3px rgba(42, 109, 176, 0.18);
 }
 textarea.form-control {
   height: auto;
-  min-height: 120px;
+  min-height: 130px;
   resize: vertical;
 }
 .help-block {
   display: block;
-  margin: 5px 0 10px;
-  color: #737373;
+  margin: 6px 0 10px;
+  font-size: 15px;
+  color: var(--muted);
 }
 .checkbox {
   display: block;
@@ -631,19 +590,15 @@ textarea.form-control {
 }
 .inline-form .form-control {
   flex: 1;
+  min-width: 0;
 }
 .form-narrow {
-  max-width: 600px;
+  max-width: 640px;
 }
 .private-text-info {
-  color: #999;
+  color: var(--muted);
 }
 @media (max-width: 767px) {
-  /* 16px — чтобы iOS не увеличивал страницу при фокусе. */
-  .form-control {
-    height: 40px;
-    font-size: 16px;
-  }
   .date-inputs {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -660,43 +615,42 @@ textarea.form-control {
 
 .alert {
   margin-bottom: 20px;
-  padding: 15px;
+  padding: 14px 18px;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 10px;
 }
 .alert > :last-child {
   margin-bottom: 0;
 }
 .alert-success {
-  color: #3c763d;
-  background: linear-gradient(#dff0d8, #c8e5bc);
-  border-color: #b2dba1;
+  color: #23522a;
+  background: #eaf5ea;
+  border-color: #c8e3c8;
 }
 .alert-info {
-  color: #31708f;
-  background: linear-gradient(#d9edf7, #b9def0);
-  border-color: #9acfea;
+  color: #234a66;
+  background: #eaf3fa;
+  border-color: #c9def0;
 }
 .alert-warning {
-  color: #8a6d3b;
-  background: linear-gradient(#fcf8e3, #f8efc0);
-  border-color: #f5e79e;
+  color: #5c4813;
+  background: #fbf6e6;
+  border-color: #eedfb3;
 }
 .alert-danger {
-  color: #a94442;
-  background: linear-gradient(#f2dede, #e7c3c3);
-  border-color: #dca7a7;
+  color: #7d211c;
+  background: #fbecea;
+  border-color: #efc9c5;
 }
 .alert a {
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .panel {
   margin-bottom: 20px;
-  padding: 15px 20px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
 }
 .panel > h3:first-child {
   margin-top: 0;
@@ -704,11 +658,16 @@ textarea.form-control {
 .panels {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 0 30px;
+  gap: 0 24px;
 }
 @media (min-width: 992px) {
   .panels {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
+  .panel {
+    padding: 16px 18px;
   }
 }
 
@@ -716,9 +675,8 @@ textarea.form-control {
   height: 20px;
   margin-bottom: 20px;
   overflow: hidden;
-  background: linear-gradient(#ebebeb, #f5f5f5);
-  border-radius: 4px;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  background: var(--line);
+  border-radius: 999px;
 }
 .progress-bar {
   height: 100%;
@@ -726,7 +684,7 @@ textarea.form-control {
   line-height: 20px;
   color: #fff;
   text-align: center;
-  background: linear-gradient(#337ab7, #286090);
+  background: var(--primary);
   transition: width 0.2s ease;
 }
 
@@ -752,20 +710,22 @@ textarea.form-control {
 
 .label-archive {
   display: inline-block;
-  padding: 0.2em 0.6em;
-  font-size: 50%;
-  font-weight: 700;
+  padding: 3px 7px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
   line-height: 1;
+  letter-spacing: 0.02em;
   color: #fff;
   vertical-align: middle;
-  background: #777;
-  border-radius: 0.25em;
+  background: #858a8f;
+  border-radius: 4px;
 }
 
 .avatar {
   flex: none;
   vertical-align: middle;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 .qr {
@@ -774,7 +734,8 @@ textarea.form-control {
   margin: 10px 0;
   padding: 10px;
   background: #fff;
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
+  border-radius: 8px;
 }
 .qr svg {
   display: block;
@@ -785,13 +746,13 @@ textarea.form-control {
 .secret {
   display: block;
   margin: 10px 0;
-  padding: 9px;
+  padding: 10px 12px;
   font-family: Menlo, Consolas, monospace;
-  font-size: 13px;
+  font-size: 14px;
   word-break: break-all;
-  background: #f5f5f5;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
 }
 
 .result-list {
@@ -800,42 +761,328 @@ textarea.form-control {
   list-style: none;
 }
 .result-list li {
-  padding: 7px 0;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
 }
 
-/* --- Заголовок страницы пользователя, вкладки --- */
+.list-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
 
+/* --- Главная --- */
+
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  padding: 28px 0;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--line);
+}
+.home-hero h1 {
+  margin: 0 0 12px;
+  font-size: 48px;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+}
+.home-hero .lead {
+  max-width: 32em;
+  margin: 0 0 22px;
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+@media (min-width: 992px) {
+  .home-hero {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 48px;
+    align-items: center;
+    padding: 40px 0;
+  }
+}
+
+.move-panel {
+  padding: 20px 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.move-panel h2 {
+  margin: 0 0 6px;
+  font-size: 21px;
+}
+.move-panel p {
+  margin: 0 0 14px;
+  font-size: 16px;
+  color: var(--text-2);
+}
+.move-panel .move-stats {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.home-aside .move-panel {
+  margin-bottom: 28px;
+}
+
+.home-welcome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  padding: 28px 0 24px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--line);
+}
+.home-welcome h1 {
+  margin: 0 0 4px;
+  font-size: 32px;
+}
+.home-welcome p {
+  margin: 0;
+  color: var(--muted);
+}
+
+@media (max-width: 767px) {
+  .home-hero {
+    padding: 20px 0 24px;
+  }
+  .home-hero h1 {
+    font-size: 36px;
+  }
+  .home-hero .lead {
+    font-size: 18px;
+  }
+  .home-hero .btn-lg,
+  .home-welcome .btn-lg {
+    width: 100%;
+    white-space: normal;
+  }
+  .home-welcome {
+    padding: 20px 0;
+  }
+  .home-welcome h1 {
+    font-size: 26px;
+  }
+  .move-panel {
+    padding: 16px 18px;
+  }
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 36px;
+}
+@media (min-width: 992px) {
+  .home-grid {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 56px;
+  }
+}
+@media (min-width: 1200px) {
+  .home-grid {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+}
+
+.home-section + .home-section {
+  margin-top: 36px;
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 6px;
+  font-size: 24px;
+}
+.section-more {
+  margin: 12px 0 0;
+}
+
+.feed {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.feed-item {
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+/* На телефоне из архива — три записи, иначе до «Почему Книгопись» не долистать. */
+@media (max-width: 767px) {
+  .feed-archive > li:nth-child(n + 4) {
+    display: none;
+  }
+}
+.feed-notes {
+  display: -webkit-box;
+  max-width: 68ch;
+  margin: 6px 0 0;
+  overflow: hidden;
+  font-size: 16px;
+  color: var(--text-2);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+.feed-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.feed-meta a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.feed-when {
+  flex: none;
+}
+.feed-when::before {
+  content: '·';
+  margin-right: 8px;
+}
+
+.aside-block + .aside-block {
+  margin-top: 28px;
+}
+.aside-title {
+  margin: 0 0 10px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.why-intro {
+  margin: 0 0 4px;
+  font-size: 15px;
+  color: var(--muted);
+}
+.why {
+  margin: 0;
+}
+.why dt {
+  margin-top: 14px;
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+}
+.why dd {
+  margin: 2px 0 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.node-cta {
+  padding: 16px 18px;
+  font-size: 15px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.node-cta p {
+  margin: 0 0 8px;
+}
+
+.user-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.user-chips a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 200px;
+  padding: 3px 11px 3px 4px;
+  font-size: 15px;
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+}
+.user-chips a span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-chips a:hover {
+  color: var(--link);
+  text-decoration: none;
+  border-color: var(--link);
+}
+
+/* --- Страница читателя: шапка и вкладки --- */
+
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 28px 0 18px;
+}
+.profile-head .avatar {
+  border-radius: 10px;
+}
+.profile-name {
+  min-width: 0;
+}
+.profile-name h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.profile-sub {
+  margin: 2px 0 0;
+  font-size: 15px;
+  color: var(--muted);
+}
 .page-title {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 10px;
 }
-.page-title h1 {
-  margin-right: 4px;
-}
 .subscribe-btn {
   padding: 0 4px;
   font-size: 26px;
   line-height: 1;
-  color: #f0ad4e;
+  color: #e09b2d;
   background: none;
   border: 0;
   cursor: pointer;
 }
 .subscribe-btn:hover {
-  color: #ec971f;
+  color: #c7801a;
 }
 .page-tools {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 10px 0;
+  margin: 12px 0;
 }
 @media (max-width: 767px) {
   h1 {
-    font-size: 26px;
+    font-size: 28px;
+  }
+  .profile-head {
+    margin: 20px 0 14px;
   }
   .page-tools .btn {
     flex: 1 1 auto;
@@ -845,39 +1092,45 @@ textarea.form-control {
 
 .nav-tabs {
   display: flex;
-  margin: 0 0 20px;
+  gap: 4px;
+  margin: 8px 0 4px;
   padding: 0;
   overflow-x: auto;
   list-style: none;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--line);
   scrollbar-width: none;
 }
 .nav-tabs a {
   display: block;
   margin-bottom: -1px;
-  padding: 10px 15px;
+  padding: 10px 12px;
+  font-weight: 500;
+  color: var(--muted);
   white-space: nowrap;
-  border: 1px solid transparent;
-  border-radius: 4px 4px 0 0;
+  border-bottom: 2px solid transparent;
 }
 .nav-tabs a:hover {
+  color: var(--text);
   text-decoration: none;
-  background: var(--light);
-  border-color: var(--light) var(--light) var(--border);
 }
 .nav-tabs a.active {
-  color: #555;
-  cursor: default;
-  background: #fff;
-  border-color: var(--border) var(--border) transparent;
+  color: var(--text);
+  border-bottom-color: var(--primary);
+}
+.nav-tabs sup {
+  top: -0.6em;
+  margin-left: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
 }
 
-/* --- Список книг по годам --- */
+/* --- Список книг по годам: записи как в дневнике --- */
 
 .books-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 30px;
+  gap: 48px;
 }
 @media (min-width: 992px) {
   .books-layout.has-nav {
@@ -885,43 +1138,99 @@ textarea.form-control {
   }
 }
 .book-group {
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 }
-.book-group h3 {
+.year-title {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 24px 0 4px;
+  font-size: 30px;
   scroll-margin-top: calc(var(--navbar-h) + var(--chips-h) + 15px);
 }
-.books-list {
+.year-count {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+.entries {
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.books-list > li {
-  margin-bottom: 20px;
+.entries > li {
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+@media (min-width: 768px) {
+  .entry.has-date {
+    display: grid;
+    grid-template-columns: 116px minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+.entry-date {
+  padding-top: 3px;
+  font-size: 14px;
+  color: var(--muted);
+}
+@media (max-width: 767px) {
+  .entry-date {
+    padding: 0;
+    margin-bottom: 2px;
+    font-size: 13px;
+  }
+  .entry-date:empty {
+    display: none;
+  }
+}
+.entry-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 14px;
 }
 .book-title {
-  font-weight: 700;
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
-.book-actions {
-  font-size: 80%;
-  font-weight: normal;
+.entry-author {
+  font-size: 16px;
+  color: var(--text-2);
 }
-/* Отступ справа, а не слева: при переносе строки ссылка не уезжает от края. */
-.book-actions a {
-  margin-right: 6px;
-  white-space: nowrap;
-}
-.notes {
+.entry-notes {
+  max-width: 72ch;
+  margin: 6px 0 0;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text-2);
   white-space: pre-line;
   overflow-wrap: anywhere;
+}
+.book-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
+  font-family: var(--sans);
+  font-size: 14px;
+}
+.book-actions a {
+  white-space: nowrap;
 }
 /* Действия появляются при наведении — только там, где есть мышь.
    В v1 они прятались всегда, и на телефоне до них было не добраться. */
 @media (hover: hover) and (pointer: fine) {
-  .books-list > li .book-actions {
+  .entries > li .book-actions {
     visibility: hidden;
   }
-  .books-list > li:hover .book-actions,
-  .books-list > li:focus-within .book-actions {
+  .entries > li:hover .book-actions,
+  .entries > li:focus-within .book-actions {
     visibility: visible;
   }
 }
@@ -936,13 +1245,11 @@ textarea.form-control {
    прокручивался и наезжал на подвал; здесь sticky со своей прокруткой. */
 .year-nav {
   position: sticky;
-  top: calc(var(--navbar-h) + 15px);
+  top: calc(var(--navbar-h) + 24px);
   align-self: start;
-  max-height: calc(100vh - var(--navbar-h) - 30px);
+  max-height: calc(100vh - var(--navbar-h) - 40px);
+  margin-top: 30px;
   overflow-y: auto;
-}
-.year-nav h3 {
-  margin-top: 0;
 }
 .sidenav-years {
   margin: 0;
@@ -952,26 +1259,29 @@ textarea.form-control {
 .sidenav-years a {
   display: flex;
   justify-content: space-between;
-  padding: 2px 0 2px 13px;
-  font-size: 90%;
-  color: #767676;
-  border-left: 2px solid transparent;
+  padding: 3px 0 3px 12px;
+  font-size: 15px;
+  color: var(--text-2);
+  border-left: 2px solid var(--line);
 }
 .sidenav-years a:hover {
-  color: var(--accent);
+  color: var(--primary);
   text-decoration: none;
 }
 .sidenav-years a.active {
-  font-weight: 700;
-  color: var(--accent);
-  border-left-color: var(--accent);
+  font-weight: 600;
+  color: var(--primary);
+  border-left-color: var(--primary);
+}
+.sidenav-years a .text-muted {
+  font-weight: 400;
 }
 .year-chips {
   display: none;
 }
 @media (max-width: 991px) {
   :root {
-    --chips-h: 46px;
+    --chips-h: 48px;
   }
   .year-nav {
     display: none;
@@ -982,40 +1292,54 @@ textarea.form-control {
     z-index: 5;
     display: flex;
     gap: 6px;
-    margin: 0 -15px 10px;
-    padding: 8px 15px;
+    margin: 0 -20px 4px;
+    padding: 8px 20px;
     overflow-x: auto;
-    background: #fff;
-    border-bottom: 1px solid var(--light);
+    background: rgba(255, 255, 255, 0.96);
+    border-bottom: 1px solid var(--line);
     scrollbar-width: none;
   }
   .year-chips a {
     flex: none;
-    padding: 4px 10px;
-    font-size: 13px;
-    color: #555;
+    padding: 4px 12px;
+    font-size: 14px;
+    color: var(--text-2);
     white-space: nowrap;
-    border: 1px solid var(--border);
-    border-radius: 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
   }
   .year-chips a:hover {
     text-decoration: none;
   }
   .year-chips a.active {
-    font-weight: 700;
-    color: var(--accent);
-    border-color: var(--accent);
+    font-weight: 600;
+    color: #fff;
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+}
+@media (max-width: 767px) {
+  .year-chips {
+    margin: 0 -16px 4px;
+    padding: 8px 16px;
+  }
+  .year-title {
+    font-size: 26px;
   }
 }
 
 /* --- Подвал --- */
 
 footer {
-  padding-bottom: 30px;
-  color: #555;
+  padding-bottom: 32px;
+  font-size: 14px;
+  color: var(--muted);
 }
 footer h4 {
   margin-top: 0;
+}
+.main-content + .container > hr {
+  margin-top: 48px;
 }
 
 @media print {

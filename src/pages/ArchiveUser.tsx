@@ -4,6 +4,7 @@ import { account } from '../lib/account';
 import { legacyIndex, legacyUser } from '../lib/legacy';
 import { ensureProfiles } from '../lib/profiles';
 import { fetchClaimsFor } from '../lib/records';
+import { Avatar } from '../components/Avatar';
 import { BookList, WishList, type ListItem, type WishItem } from '../components/BookList';
 import { ErrorAlert, Loading, useAsync } from '../components/Status';
 import { archivePath, UserLink, userPath } from '../components/UserLink';
@@ -84,11 +85,16 @@ export function ArchiveUser() {
 
   return (
     <div>
-      <div class="page-title">
-        <h1>
-          Список прочитанных книг пользователя {u.nickname} <span class="label-archive">архив</span>
-        </h1>
-      </div>
+      <header class="profile-head">
+        <Avatar seed={u.id} size={44} />
+        <div class="profile-name">
+          <div class="page-title">
+            <h1>{u.nickname}</h1>
+            <span class="label-archive">архив</span>
+          </div>
+          <p class="profile-sub">Список прочитанных книг в старой Книгописи</p>
+        </div>
+      </header>
 
       <div class="alert alert-warning">
         <p>

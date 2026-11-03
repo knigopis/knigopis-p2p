@@ -11,7 +11,8 @@
 //   index.json         — все пользователи: [id, ник, книг, желаний, обновлён]
 //   users/<id>.json    — пользователь целиком: книги, желания, подписки
 //   books-index.json   — название и автор каждой книги → номер пользователя в index
-//   latest.json        — последние книги с заметками (для главной)
+//   latest.json        — для главной: число пользователей и книг, последние книги
+//                        с заметками (по одной на человека)
 import { readdir, readFile, mkdir, writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -128,6 +129,12 @@ await writeFile(
   JSON.stringify({ builtAt: new Date().toISOString(), source: 'knigopis/repo2.knigopis.com', commit, users: index }),
 );
 await writeFile(join(out, 'books-index.json'), JSON.stringify(booksIndex));
-await writeFile(join(out, 'latest.json'), JSON.stringify(latest.slice(0, 30)));
+// По одной книге на человека: иначе главную занимают два-три самых активных читателя.
+const seen = new Set();
+const latestItems = latest.filter((b) => !seen.has(b.userId) && seen.add(b.userId)).slice(0, 30);
+await writeFile(
+  join(out, 'latest.json'),
+  JSON.stringify({ users: index.length, books: booksIndex.length, items: latestItems }),
+);
 
 console.log(`users: ${index.length}, books: ${booksIndex.length}, wishes: ${index.reduce((s, u) => s + u[3], 0)}`);

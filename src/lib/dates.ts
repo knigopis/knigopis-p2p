@@ -6,12 +6,20 @@ export interface ReadDate {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-// Как в старой Книгописи: год виден по группе, в строке — [ГГГГ-ММ] или [ГГГГ-ММ-ДД].
-// В v1 день без месяца давал «-05» — здесь день показывается только вместе с месяцем.
-export function readDateLabel(r: ReadDate): string {
-  if (!r.readYear || !r.readMonth) return '';
-  const base = `${r.readYear}-${pad(r.readMonth)}`;
-  return r.readDay ? `${base}-${pad(r.readDay)}` : base;
+const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const MONTHS_NOM = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+
+// Дата внутри года (год виден по группе): «1 ноября», «ноябрь» или ''.
+export function readDayMonth(r: ReadDate): string {
+  if (!r.readMonth || r.readMonth > 12) return '';
+  return r.readDay ? `${r.readDay} ${MONTHS[r.readMonth - 1]}` : MONTHS_NOM[r.readMonth - 1];
+}
+
+// Короткая дата записи: «30 октября», в прошлые годы — «12 мая 2019».
+export function shortDate(d: Date): string {
+  if (Number.isNaN(d.getTime())) return '';
+  const day = `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  return d.getFullYear() === new Date().getFullYear() ? day : `${day} ${d.getFullYear()}`;
 }
 
 // Тег read события: «ГГГГ», «ГГГГ-ММ» или «ГГГГ-ММ-ДД».

@@ -147,24 +147,29 @@ function UserView({ pk, tab }: { pk: string; tab: string }) {
 
   return (
     <div>
-      <div class="page-title">
-        <h1>
-          <Avatar seed={pk} size={28} /> Список прочитанных книг пользователя {displayName(pk)}
-        </h1>
-        {acc && !isMe && <FollowStar pk={pk} />}
-      </div>
-
-      {claims.data && claims.data.length > 0 && (
-        <p class="text-muted">
-          Перенесено из архива старой Книгописи:{' '}
-          {claims.data.map((c, i) => (
-            <span key={c.legacyId}>
-              {i > 0 && ', '}
-              <a href={archivePath(c.legacyId)}>{c.nickname || c.legacyId}</a>
-            </span>
-          ))}
-        </p>
-      )}
+      <header class="profile-head">
+        <Avatar seed={pk} size={44} />
+        <div class="profile-name">
+          <div class="page-title">
+            <h1>{displayName(pk)}</h1>
+            {acc && !isMe && <FollowStar pk={pk} />}
+          </div>
+          <p class="profile-sub">
+            {isMe ? 'Мой список прочитанных книг' : 'Список прочитанных книг'}
+            {claims.data && claims.data.length > 0 && (
+              <>
+                {' · перенесено из архива: '}
+                {claims.data.map((c, i) => (
+                  <span key={c.legacyId}>
+                    {i > 0 && ', '}
+                    <a href={archivePath(c.legacyId)}>{c.nickname || c.legacyId}</a>
+                  </span>
+                ))}
+              </>
+            )}
+          </p>
+        </div>
+      </header>
 
       {isMe && (
         <div class="page-tools">
@@ -181,7 +186,6 @@ function UserView({ pk, tab }: { pk: string; tab: string }) {
           )}
         </div>
       )}
-      <hr />
 
       <ul class="nav-tabs">
         <li>

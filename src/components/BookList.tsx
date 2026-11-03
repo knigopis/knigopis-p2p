@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { groupByYear, readDateLabel, type ReadDate } from '../lib/dates';
+import { groupByYear, readDayMonth, type ReadDate } from '../lib/dates';
 
 export interface ListAction {
   href: string;
@@ -20,29 +20,39 @@ function Actions({ actions }: { actions: ListAction[] }) {
     <span class="book-actions">
       {actions.map((a) => (
         <a key={a.href} href={a.href}>
-          [{a.label}]
+          {a.label}
         </a>
       ))}
     </span>
   );
 }
 
-function BookItem({ item }: { item: ListItem }) {
-  const date = readDateLabel(item);
+// Запись как в дневнике: на широком экране дата прочтения — слева отдельной колонкой.
+function Entry(props: { title: string; author: string; notes: string; date?: string; actions: ListAction[] }) {
   return (
-    <li>
-      <span class="book-title">{item.title || 'Без названия'}</span> <Actions actions={item.actions} />
-      {item.author && <div>{item.author}</div>}
-      {(date || item.notes) && (
-        <div class="text-muted">
-          {date && <small>[{date}]</small>} {item.notes && <small class="notes">{item.notes}</small>}
+    <li class={props.date !== undefined ? 'entry has-date' : 'entry'}>
+      {props.date !== undefined && <div class="entry-date">{props.date}</div>}
+      <div class="entry-body">
+        <div class="entry-head">
+          <span class="book-title">{props.title || 'Без названия'}</span>
+          <Actions actions={props.actions} />
         </div>
-      )}
+        {props.author && <div class="entry-author">{props.author}</div>}
+        {props.notes && <p class="entry-notes">{props.notes}</p>}
+      </div>
     </li>
   );
 }
 
 const yearLabel = (year: number | null) => (year ? String(year) : 'Без даты');
+
+// 1 книга, 2 книги, 5 книг.
+export function plural(n: number, [one, few, many]: [string, string, string]): string {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  const word = m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many;
+  return `${n.toLocaleString('ru-RU')} ${word}`;
+}
 
 function scrollToYear(key: string) {
   document.getElementById(`year-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -122,19 +132,28 @@ export function BookList({ items, empty = 'Записей ещё нет' }: { it
       <div class={`books-layout${hasNav ? ' has-nav' : ''}`}>
         <div>
           {groups.map((g) => (
-            <div class="book-group" key={g.key}>
-              <h3 id={`year-${g.key}`}>{yearLabel(g.year)}</h3>
-              <ul class="books-list">
+            <section class="book-group" key={g.key}>
+              <h2 class="year-title" id={`year-${g.key}`}>
+                {yearLabel(g.year)} <span class="year-count">{plural(g.items.length, ['книга', 'книги', 'книг'])}</span>
+              </h2>
+              <ul class="entries">
                 {g.items.map((item) => (
-                  <BookItem key={item.key} item={item} />
+                  <Entry
+                    key={item.key}
+                    title={item.title}
+                    author={item.author}
+                    notes={item.notes}
+                    date={g.year ? readDayMonth(item) : undefined}
+                    actions={item.actions}
+                  />
                 ))}
               </ul>
-            </div>
+            </section>
           ))}
         </div>
         {hasNav && (
           <aside class="year-nav">
-            <h3>Оглавление</h3>
+            <div class="aside-title">Годы</div>
             <ul class="sidenav-years">
               {links(true).map((a) => (
                 <li key={a.key}>{a}</li>
@@ -164,17 +183,9 @@ export function WishList({ items, empty = 'Список пуст' }: { items: Wi
     );
   }
   return (
-    <ul class="books-list">
+    <ul class="entries">
       {items.map((w) => (
-        <li key={w.key}>
-          <span class="book-title">{w.title || 'Без названия'}</span> <Actions actions={w.actions} />
-          {w.author && <div>{w.author}</div>}
-          {w.notes && (
-            <div class="text-muted">
-              <small class="notes">{w.notes}</small>
-            </div>
-          )}
-        </li>
+        <Entry key={w.key} title={w.title} author={w.author} notes={w.notes} actions={w.actions} />
       ))}
     </ul>
   );

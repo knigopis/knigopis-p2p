@@ -89,7 +89,14 @@ function legacyBooksIndex() {
   return booksPromise;
 }
 
-export const legacyLatest = () => getJson<LegacyLatest[]>('/legacy/latest.json');
+// Для главной: сколько всего в архиве и последние книги с заметками, по одной на человека.
+export interface LegacyLatestFile {
+  users: number;
+  books: number;
+  items: LegacyLatest[];
+}
+
+export const legacyLatest = () => getJson<LegacyLatestFile>('/legacy/latest.json');
 
 export function norm(s: string): string {
   return s.toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();

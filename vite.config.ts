@@ -37,7 +37,7 @@ export default defineConfig({
         clientsClaim: true,
         // Архив (тысячи файлов, ~30 МБ) в предзагрузку не кладём —
         // кешируем по мере просмотра.
-        globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
         globIgnores: ['legacy/**'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/legacy\//],
