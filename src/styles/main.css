@@ -922,17 +922,13 @@ textarea.form-control {
   }
 }
 .feed-notes {
-  display: -webkit-box;
   max-width: 68ch;
   margin: 6px 0 0;
-  overflow: hidden;
   font-size: 16px;
+  line-height: 1.55;
   color: var(--text-2);
   white-space: pre-line;
   overflow-wrap: anywhere;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
 }
 .feed-meta {
   display: flex;
