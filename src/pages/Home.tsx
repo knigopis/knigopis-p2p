@@ -28,15 +28,15 @@ function FeedItem(props: { title: string; author: string; notes: string; seed: s
   return (
     <li class="feed-item">
       <Cover class="feed-cover" title={props.title} author={props.author} />
-      <div class="feed-body">
+      <div class="feed-head">
         <div class="book-title">{props.title || 'Без названия'}</div>
         {props.author && <div class="entry-author">{props.author}</div>}
-        {props.notes && <p class="feed-notes">{props.notes}</p>}
-        <div class="feed-meta">
-          <Avatar seed={props.seed} size={18} />
-          {props.who}
-          {props.when && <span class="feed-when">{props.when}</span>}
-        </div>
+      </div>
+      {props.notes && <p class="feed-notes">{props.notes}</p>}
+      <div class="feed-meta">
+        <Avatar seed={props.seed} size={18} />
+        {props.who}
+        {props.when && <span class="feed-when">{props.when}</span>}
       </div>
     </li>
   );

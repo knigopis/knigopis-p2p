@@ -29,7 +29,7 @@ function Actions({ actions }: { actions: ListAction[] }) {
 }
 
 // Запись как в дневнике: на широком экране дата прочтения — слева отдельной колонкой,
-// за ней обложка.
+// за ней обложка. Заметки — отдельным блоком: на телефоне они уходят под обложку.
 function Entry(props: { title: string; author: string; notes: string; date?: string; actions: ListAction[] }) {
   return (
     <li class={props.date !== undefined ? 'entry has-date' : 'entry'}>
@@ -41,8 +41,8 @@ function Entry(props: { title: string; author: string; notes: string; date?: str
           <Actions actions={props.actions} />
         </div>
         {props.author && <div class="entry-author">{props.author}</div>}
-        {props.notes && <p class="entry-notes">{props.notes}</p>}
       </div>
+      {props.notes && <p class="entry-notes">{props.notes}</p>}
     </li>
   );
 }

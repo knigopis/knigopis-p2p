@@ -1118,20 +1118,35 @@ label.date-mode {
   padding: 0;
   list-style: none;
 }
+/* Обложка слева. На широком экране всё остальное справа от неё; на телефоне справа — название,
+   автор и кто прочитал, а отзыв — под обложкой на всю ширину. */
 .feed-item {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-columns: 80px minmax(0, 1fr);
+  grid-template-areas: 'cover head' 'cover notes' 'cover meta';
+  grid-template-rows: auto auto 1fr;
   gap: 0 16px;
   align-items: start;
   padding: 16px 0;
   border-top: 1px solid var(--line);
 }
 .feed-cover {
-  width: 56px;
+  grid-area: cover;
+  width: 80px;
   margin-top: 3px;
 }
-.feed-body {
+.feed-head {
+  grid-area: head;
   min-width: 0;
+}
+@media (max-width: 767px) {
+  .feed-item {
+    grid-template-areas: 'cover head' 'cover meta' 'notes notes';
+    grid-template-rows: auto 1fr auto;
+  }
+  .feed-item > .feed-notes {
+    margin-top: 12px;
+  }
 }
 /* На телефоне из архива — три записи, иначе до «Почему Книгопись» не долистать. */
 @media (max-width: 767px) {
@@ -1140,6 +1155,7 @@ label.date-mode {
   }
 }
 .feed-notes {
+  grid-area: notes;
   max-width: 68ch;
   margin: 6px 0 0;
   font-size: 16px;
@@ -1149,6 +1165,7 @@ label.date-mode {
   overflow-wrap: anywhere;
 }
 .feed-meta {
+  grid-area: meta;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1379,31 +1396,49 @@ label.date-mode {
   padding: 14px 0;
   border-top: 1px solid var(--line);
 }
-/* Запись: обложка слева от текста, дата на широком экране — колонкой перед обложкой. */
+/* Запись: обложка слева. На широком экране всё остальное справа от неё, дата — колонкой перед обложкой;
+   на телефоне справа от обложки только название и автор, заметки — под ней на всю ширину. */
 .entry {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  gap: 0 14px;
+  grid-template-columns: 80px minmax(0, 1fr);
+  grid-template-areas: 'cover head' 'cover notes';
+  grid-template-rows: auto 1fr;
+  gap: 0 16px;
   align-items: start;
 }
 .entry-cover {
-  width: 44px;
+  grid-area: cover;
+  width: 80px;
   margin-top: 3px;
+}
+.entry-body {
+  grid-area: head;
+  min-width: 0;
 }
 @media (min-width: 768px) {
   .entry.has-date {
-    grid-template-columns: 116px 44px minmax(0, 1fr);
-    gap: 0 16px;
+    grid-template-columns: 116px 80px minmax(0, 1fr);
+    grid-template-areas: 'date cover head' 'date cover notes';
   }
 }
 .entry-date {
+  grid-area: date;
   padding-top: 3px;
   font-size: 14px;
   color: var(--muted);
 }
 @media (max-width: 767px) {
+  .entry {
+    grid-template-areas: 'cover head' 'notes notes';
+    grid-template-rows: auto auto;
+  }
+  .entry.has-date {
+    grid-template-areas: 'date date' 'cover head' 'notes notes';
+  }
+  .entry > .entry-notes {
+    margin-top: 12px;
+  }
   .entry-date {
-    grid-column: 1 / -1;
     padding: 0;
     margin-bottom: 4px;
     font-size: 13px;
@@ -1430,6 +1465,7 @@ label.date-mode {
   color: var(--text-2);
 }
 .entry-notes {
+  grid-area: notes;
   max-width: 72ch;
   margin: 6px 0 0;
   font-size: 16px;
