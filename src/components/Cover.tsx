@@ -1,16 +1,8 @@
-// Обложка книги (src/lib/cover.ts). Рисуется, только когда подъезжает к экрану, и после
-// загрузки шрифтов обложек — до этого на её месте спокойная заглушка. Для чтения с экрана
-// обложка не нужна: название и автор рядом.
-import { signal } from '@preact/signals';
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { coverFontsLoaded, coverSvg, loadCoverFonts } from '../lib/cover';
-
-const fontsReady = signal(false);
-function ensureFonts() {
-  if (fontsReady.value) return;
-  if (coverFontsLoaded()) fontsReady.value = true;
-  else loadCoverFonts().then(() => (fontsReady.value = true));
-}
+// Обложка книги (src/lib/cover.ts). Рисуется, только когда подъезжает к экрану, и показывается
+// после загрузки своих шрифтов — до этого на её месте спокойная заглушка (или прежняя обложка,
+// пока в форме меняют название). Для чтения с экрана обложка не нужна: название и автор рядом.
+import { useEffect, useRef, useState } from 'preact/hooks';
+import { loadCoverFonts, placeCover } from '../lib/cover';
 
 // Один наблюдатель на все обложки.
 const waiting = new Map<Element, () => void>();
@@ -39,9 +31,18 @@ function whenVisible(el: Element, cb: () => void): () => void {
 export function Cover({ title, author, class: cls = '', eager = false }: { title: string; author: string; class?: string; eager?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(eager);
-  useEffect(ensureFonts, []);
+  const [html, setHtml] = useState('');
   useEffect(() => (visible || !ref.current ? undefined : whenVisible(ref.current, () => setVisible(true))), [visible]);
-  const ready = fontsReady.value;
-  const html = useMemo(() => (visible && ready ? coverSvg({ title, author }) : ''), [visible, ready, title, author]);
+  useEffect(() => {
+    if (!visible) return;
+    const { svg, fonts } = placeCover({ title, author });
+    const wait = loadCoverFonts(fonts);
+    if (!wait) return setHtml(svg);
+    let live = true;
+    wait.then(() => live && setHtml(svg));
+    return () => {
+      live = false;
+    };
+  }, [visible, title, author]);
   return <div ref={ref} class={`cover ${cls}`} aria-hidden="true" dangerouslySetInnerHTML={{ __html: html }} />;
 }
