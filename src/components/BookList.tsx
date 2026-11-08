@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { groupByYear, readDayMonth, type ReadDate } from '../lib/dates';
+import { Cover } from './Cover';
 
 export interface ListAction {
   href: string;
@@ -27,11 +28,13 @@ function Actions({ actions }: { actions: ListAction[] }) {
   );
 }
 
-// Запись как в дневнике: на широком экране дата прочтения — слева отдельной колонкой.
+// Запись как в дневнике: на широком экране дата прочтения — слева отдельной колонкой,
+// за ней обложка.
 function Entry(props: { title: string; author: string; notes: string; date?: string; actions: ListAction[] }) {
   return (
     <li class={props.date !== undefined ? 'entry has-date' : 'entry'}>
       {props.date !== undefined && <div class="entry-date">{props.date}</div>}
+      <Cover class="entry-cover" title={props.title} author={props.author} />
       <div class="entry-body">
         <div class="entry-head">
           <span class="book-title">{props.title || 'Без названия'}</span>

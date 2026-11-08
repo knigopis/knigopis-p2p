@@ -9,6 +9,7 @@ import { displayName, ensureProfiles } from '../lib/profiles';
 import { fetchClaimsBy, fetchLatestBooks, fetchLatestClaims } from '../lib/records';
 import { archivePath, userPath } from '../components/UserLink';
 import { Avatar } from '../components/Avatar';
+import { Cover } from '../components/Cover';
 import { plural } from '../components/BookList';
 import { ErrorAlert, Loading, useAsync } from '../components/Status';
 
@@ -26,13 +27,16 @@ async function loadFeed() {
 function FeedItem(props: { title: string; author: string; notes: string; seed: string; who: ComponentChildren; when: string }) {
   return (
     <li class="feed-item">
-      <div class="book-title">{props.title || 'Без названия'}</div>
-      {props.author && <div class="entry-author">{props.author}</div>}
-      {props.notes && <p class="feed-notes">{props.notes}</p>}
-      <div class="feed-meta">
-        <Avatar seed={props.seed} size={18} />
-        {props.who}
-        {props.when && <span class="feed-when">{props.when}</span>}
+      <Cover class="feed-cover" title={props.title} author={props.author} />
+      <div class="feed-body">
+        <div class="book-title">{props.title || 'Без названия'}</div>
+        {props.author && <div class="entry-author">{props.author}</div>}
+        {props.notes && <p class="feed-notes">{props.notes}</p>}
+        <div class="feed-meta">
+          <Avatar seed={props.seed} size={18} />
+          {props.who}
+          {props.when && <span class="feed-when">{props.when}</span>}
+        </div>
       </div>
     </li>
   );
