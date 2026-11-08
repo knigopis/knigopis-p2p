@@ -13,6 +13,8 @@
 //   books-index.json   — название и автор каждой книги → номер пользователя в index
 //   latest.json        — для главной: число пользователей и книг, последние книги
 //                        с заметками (по одной на человека)
+//   suggest.json       — подсказки в форме книги: авторы и книги, встречающиеся
+//                        в архиве хотя бы дважды, по убыванию частоты
 import { readdir, readFile, mkdir, writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -70,6 +72,37 @@ const byReadDate = (a, b) =>
   (b.readDay ?? 0) - (a.readDay ?? 0) ||
   String(b.createdAt).localeCompare(String(a.createdAt));
 
+// --- Подсказки: варианты написания склеиваются по набору слов, так что
+// «Гоголь Н.В.» и «Н.В. Гоголь» — один автор; показывается самое частое написание.
+// Те же слова считает клиент (src/lib/suggest.ts).
+const words = (s) =>
+  s
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
+const SUGGEST_MIN = 2;
+const suggestAuthors = new Map(); // ключ автора → { count, spellings }
+const suggestBooks = new Map(); // ключ названия + ключ автора → { authorKey, count, spellings }
+
+function tally(map, key, spelling, extra) {
+  const e = map.get(key) ?? { ...extra, count: 0, spellings: new Map() };
+  e.count++;
+  e.spellings.set(spelling, (e.spellings.get(spelling) ?? 0) + 1);
+  map.set(key, e);
+}
+
+function countForSuggest(b) {
+  if (!b.title || !b.author) return;
+  const authorKey = words(b.author).sort().join(' ');
+  const titleKey = words(b.title).join(' ');
+  if (!authorKey || !titleKey) return;
+  tally(suggestAuthors, authorKey, b.author);
+  tally(suggestBooks, `${titleKey}|${authorKey}`, b.title, { authorKey });
+}
+
+const mostCommon = (spellings) => [...spellings.entries()].sort((a, b) => b[1] - a[1])[0][0];
+
 await rm(out, { recursive: true, force: true });
 await mkdir(join(out, 'users'), { recursive: true });
 
@@ -111,6 +144,7 @@ for (const prefix of (await readdir(usersRoot)).sort()) {
     const userIdx = index.length;
     index.push([id, user.nickname, books.length, wishes.length, (user.updatedAt ?? '').slice(0, 10)]);
     for (const b of books) {
+      countForSuggest(b);
       booksIndex.push([b.title, b.author, userIdx]);
       if (b.notes.trim()) latest.push({ userId: id, nickname: user.nickname, ...b });
     }
@@ -137,4 +171,20 @@ await writeFile(
   JSON.stringify({ users: index.length, books: booksIndex.length, items: latestItems }),
 );
 
+const authorList = [...suggestAuthors.entries()]
+  .filter(([, a]) => a.count >= SUGGEST_MIN)
+  .sort((a, b) => b[1].count - a[1].count);
+const authorIdx = new Map(authorList.map(([key], i) => [key, i]));
+const bookList = [...suggestBooks.values()]
+  .filter((b) => b.count >= SUGGEST_MIN && authorIdx.has(b.authorKey))
+  .sort((a, b) => b.count - a.count);
+await writeFile(
+  join(out, 'suggest.json'),
+  JSON.stringify({
+    authors: authorList.map(([, a]) => [mostCommon(a.spellings), a.count]),
+    books: bookList.map((b) => [mostCommon(b.spellings), authorIdx.get(b.authorKey), b.count]),
+  }),
+);
+
 console.log(`users: ${index.length}, books: ${booksIndex.length}, wishes: ${index.reduce((s, u) => s + u[3], 0)}`);
+console.log(`suggest: ${authorList.length} authors, ${bookList.length} books`);

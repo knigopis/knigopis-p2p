@@ -7,7 +7,7 @@
 import type { Event, EventTemplate } from 'nostr-tools/pure';
 import { KIND_BOOK, KIND_CLAIM, KIND_WISH } from './config';
 import { compareReadDesc, parseReadTag, readTag, type ReadDate } from './dates';
-import { latestByAddress, now, publish, query, queryAll } from './nostr';
+import { latestByAddress, nextTime, now, publish, query, queryAll } from './nostr';
 
 export interface Legacy {
   userId: string;
@@ -117,12 +117,13 @@ export function wishTemplate(w: Omit<Wish, 'pubkey' | 'createdAt'>, createdAt = 
   };
 }
 
-async function remove(kind: number, pubkey: string, d: string) {
-  await publish({ kind, created_at: now(), content: '', tags: [['d', d], ['deleted', '1']] });
+async function remove(kind: number, pubkey: string, d: string, prev: number) {
+  const createdAt = nextTime(prev);
+  await publish({ kind, created_at: createdAt, content: '', tags: [['d', d], ['deleted', '1']] });
   // NIP-09 — вежливая просьба relay удалить; не все её выполняют, поэтому ошибки не важны.
   publish({
     kind: 5,
-    created_at: now(),
+    created_at: createdAt,
     content: '',
     tags: [['a', `${kind}:${pubkey}:${d}`], ['k', String(kind)]],
   }).catch(() => {});
@@ -157,10 +158,11 @@ export async function fetchWish(pubkey: string, d: string): Promise<Wish | null>
   return ev && wishFromEvent(ev);
 }
 
-export const saveBook = (b: Omit<Book, 'pubkey' | 'createdAt'>) => publish(bookTemplate(b));
-export const saveWish = (w: Omit<Wish, 'pubkey' | 'createdAt'>) => publish(wishTemplate(w));
-export const deleteBook = (b: Book) => remove(KIND_BOOK, b.pubkey, b.d);
-export const deleteWish = (w: Wish) => remove(KIND_WISH, w.pubkey, w.d);
+// prev — created_at версии, которую правим: новая должна быть строго новее (см. nextTime).
+export const saveBook = (b: Omit<Book, 'pubkey' | 'createdAt'>, prev?: number) => publish(bookTemplate(b, nextTime(prev)));
+export const saveWish = (w: Omit<Wish, 'pubkey' | 'createdAt'>, prev?: number) => publish(wishTemplate(w, nextTime(prev)));
+export const deleteBook = (b: Book) => remove(KIND_BOOK, b.pubkey, b.d, b.createdAt);
+export const deleteWish = (w: Wish) => remove(KIND_WISH, w.pubkey, w.d, w.createdAt);
 
 // Последние новые (не перенесённые из архива) книги всех пользователей.
 export async function fetchLatestBooks(limit = 300): Promise<Book[]> {

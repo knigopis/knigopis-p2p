@@ -152,3 +152,10 @@ export function publish(template: EventTemplate): Promise<Event> {
 export function now(): number {
   return Math.floor(Date.now() / 1000);
 }
+
+// Время новой версии записи — строго позже прежней: при равном created_at relay оставляет
+// версию с меньшим id, и правка или удаление в ту же секунду были бы отклонены
+// («replaced: have newer event»).
+export function nextTime(prev?: number): number {
+  return Math.max(now(), (prev ?? 0) + 1);
+}

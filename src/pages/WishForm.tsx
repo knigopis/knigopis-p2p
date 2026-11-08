@@ -2,7 +2,9 @@ import { useEffect, useState } from 'preact/hooks';
 import { useLocation, useRoute } from 'preact-iso';
 import { account } from '../lib/account';
 import { deleteWish, fetchWish, newId, saveWish } from '../lib/records';
+import { rememberOwnAuthor } from '../lib/suggest';
 import { ErrorAlert, Loading, useAsync } from '../components/Status';
+import { TitleAuthorInputs } from '../components/TitleAuthorInputs';
 import { userPath } from '../components/UserLink';
 import { decodeParam } from './ArchiveUser';
 import { LoginRequired } from './Login';
@@ -44,14 +46,18 @@ export function WishForm() {
     }
     setBusy(true);
     try {
-      await saveWish({
-        d: existing.data?.d ?? newId(),
-        title: title.trim(),
-        author: author.trim(),
-        notes,
-        priority: existing.data?.priority ?? null,
-        legacy: existing.data?.legacy ?? null,
-      });
+      await saveWish(
+        {
+          d: existing.data?.d ?? newId(),
+          title: title.trim(),
+          author: author.trim(),
+          notes,
+          priority: existing.data?.priority ?? null,
+          legacy: existing.data?.legacy ?? null,
+        },
+        existing.data?.createdAt,
+      );
+      rememberOwnAuthor(acc.pk, author);
       route(back);
     } catch (err) {
       setError(err);
@@ -76,14 +82,17 @@ export function WishForm() {
       <h1>{d ? 'Редактирование' : 'Добавить к прочтению'}</h1>
       <p class="private-text-info">Запись будет видна всем</p>
       <form onSubmit={save}>
-        <div class="form-group">
-          <label for="wish-title">Заголовок книги</label>
-          <input id="wish-title" class="form-control" placeholder="Укажите заголовок" value={title} onInput={(e) => setTitle(e.currentTarget.value)} autoFocus={!d} />
-        </div>
-        <div class="form-group">
-          <label for="wish-author">Автор книги</label>
-          <input id="wish-author" class="form-control" placeholder="Укажите автора" value={author} onInput={(e) => setAuthor(e.currentTarget.value)} />
-        </div>
+        <TitleAuthorInputs
+          idPrefix="wish"
+          pk={acc.pk}
+          title={title}
+          author={author}
+          autoFocus={!d}
+          onChange={(patch) => {
+            if (patch.title !== undefined) setTitle(patch.title);
+            if (patch.author !== undefined) setAuthor(patch.author);
+          }}
+        />
         <div class="form-group">
           <label for="wish-notes">Примечания</label>
           <textarea id="wish-notes" class="form-control" value={notes} onInput={(e) => setNotes(e.currentTarget.value)} placeholder="Например, кто посоветовал" />

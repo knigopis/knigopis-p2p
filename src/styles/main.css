@@ -571,10 +571,129 @@ textarea.form-control {
   font-weight: normal;
   cursor: pointer;
 }
-.date-inputs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 110px));
+select.form-control {
+  padding-right: 8px;
+  cursor: pointer;
+}
+.form-control[disabled] {
+  color: var(--muted);
+  background: var(--surface);
+  cursor: not-allowed;
+}
+
+/* «Когда прочитали?»: варианты точности — радиокнопки в виде плашек. */
+.date-field {
+  min-width: 0;
+  margin: 0 0 18px;
+  padding: 0;
+  border: 0;
+}
+.date-field legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.date-modes {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+label.date-mode {
+  position: relative;
+  margin: 0;
+  font-weight: normal;
+  cursor: pointer;
+}
+.date-mode input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.date-mode span {
+  display: inline-block;
+  padding: 7px 14px;
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+.date-mode:hover span {
+  background: var(--surface);
+}
+.date-mode input:checked + span {
+  color: #fff;
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.date-mode input:focus-visible + span {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.date-custom {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 170px) 130px;
+  gap: 8px;
+  margin-top: 12px;
+}
+.date-custom label {
+  display: block;
+  margin: 0;
+  font-size: 14px;
+  font-weight: normal;
+  color: var(--muted);
+}
+.date-custom label > span {
+  display: block;
+  margin-bottom: 4px;
+}
+.date-summary {
+  margin: 10px 0 0;
+}
+.date-summary strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Подсказки под полем ввода. */
+.suggest {
+  position: relative;
+}
+.suggest-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  max-height: 320px;
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.suggest-list li {
+  padding: 8px 12px;
+  line-height: 1.35;
+  cursor: pointer;
+}
+.suggest-list li:hover,
+.suggest-list li.active {
+  background: var(--surface);
+}
+.suggest-hint {
+  display: block;
+  font-size: 14px;
+  color: var(--muted);
 }
 .form-actions {
   display: flex;
@@ -599,8 +718,8 @@ textarea.form-control {
   color: var(--muted);
 }
 @media (max-width: 767px) {
-  .date-inputs {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .date-custom {
+    grid-template-columns: minmax(0, 0.6fr) minmax(0, 1fr) minmax(0, 1fr);
   }
   .form-actions .btn {
     flex: 1 1 100%;

@@ -39,6 +39,75 @@ export function parseReadTag(value: string | undefined): ReadDate {
   };
 }
 
+// --- Выбор даты в форме книги: насколько точно человек помнит, когда прочитал ---
+
+export type DateMode = 'today' | 'month' | 'year' | 'custom' | 'none';
+
+export interface DateChoice {
+  mode: DateMode;
+  // Поля «Раньше…» — как ввёл человек.
+  year: string;
+  month: string;
+  day: string;
+}
+
+export const MONTH_NAMES = MONTHS_NOM;
+
+export const DEFAULT_CHOICE: DateChoice = { mode: 'month', year: '', month: '', day: '' };
+
+// Дней в месяце; если год неизвестен — високосный, чтобы 29 февраля было можно выбрать.
+export function daysInMonth(year: number | null, month: number): number {
+  return new Date(year ?? 2000, month, 0).getDate();
+}
+
+const str = (n: number | null) => (n == null ? '' : String(n));
+
+export function choiceFromRead(r: ReadDate, now = new Date()): DateChoice {
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  const fields = { year: str(r.readYear), month: r.readYear ? str(r.readMonth) : '', day: r.readYear && r.readMonth ? str(r.readDay) : '' };
+  let mode: DateMode = 'custom';
+  if (!r.readYear) mode = 'none';
+  else if (r.readYear === y && r.readMonth === m && r.readDay === now.getDate()) mode = 'today';
+  else if (r.readYear === y && r.readMonth === m && !r.readDay) mode = 'month';
+  else if (r.readYear === y && !r.readMonth) mode = 'year';
+  return { mode, ...fields };
+}
+
+// Дата для события; для «Раньше…» с ошибкой во вводе — исключение с понятным текстом.
+export function readFromChoice(c: DateChoice, now = new Date()): ReadDate {
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  switch (c.mode) {
+    case 'today':
+      return { readYear: y, readMonth: m, readDay: now.getDate() };
+    case 'month':
+      return { readYear: y, readMonth: m, readDay: null };
+    case 'year':
+      return { readYear: y, readMonth: null, readDay: null };
+    case 'none':
+      return { readYear: null, readMonth: null, readDay: null };
+  }
+  const year = c.year.trim();
+  if (!year) throw new Error('Укажите год — или выберите «Не помню»');
+  const readYear = Number(year);
+  if (!/^\d{4}$/.test(year) || readYear < 1000 || readYear > y) throw new Error(`Проверьте год: от 1000 до ${y}`);
+  const readMonth = c.month ? Number(c.month) : null;
+  const readDay = readMonth && c.day ? Number(c.day) : null;
+  if (readMonth && readDay && readDay > daysInMonth(readYear, readMonth)) throw new Error('Проверьте день: в этом месяце столько нет');
+  const future = readYear === y && readMonth && (readMonth > m || (readMonth === m && readDay && readDay > now.getDate()));
+  if (future) throw new Error('Эта дата ещё не наступила');
+  return { readYear, readMonth, readDay };
+}
+
+// «8 ноября 2026», «ноябрь 2026», «2026 год» или «без даты».
+export function describeRead(r: ReadDate): string {
+  if (!r.readYear) return 'без даты';
+  if (!r.readMonth || r.readMonth > 12) return `${r.readYear} год`;
+  if (!r.readDay) return `${MONTHS_NOM[r.readMonth - 1]} ${r.readYear}`;
+  return `${r.readDay} ${MONTHS[r.readMonth - 1]} ${r.readYear}`;
+}
+
 export function compareReadDesc(a: ReadDate, b: ReadDate): number {
   return (
     (b.readYear ?? 0) - (a.readYear ?? 0) ||

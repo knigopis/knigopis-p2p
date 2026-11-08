@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'preact/hooks';
 import { useLocation, useRoute } from 'preact-iso';
 import { account } from '../lib/account';
+import { choiceFromRead, DEFAULT_CHOICE, readFromChoice, type DateChoice } from '../lib/dates';
 import { deleteBook, deleteWish, fetchBook, fetchWish, newId, saveBook, type Book } from '../lib/records';
+import { rememberOwnAuthor } from '../lib/suggest';
+import { ReadDateInput } from '../components/ReadDateInput';
 import { ErrorAlert, Loading, useAsync } from '../components/Status';
+import { TitleAuthorInputs } from '../components/TitleAuthorInputs';
 import { userPath } from '../components/UserLink';
 import { decodeParam } from './ArchiveUser';
 import { LoginRequired } from './Login';
@@ -11,31 +15,10 @@ import { NotFound } from './NotFound';
 interface Fields {
   title: string;
   author: string;
-  readYear: string;
-  readMonth: string;
-  readDay: string;
   notes: string;
 }
 
-const str = (n: number | null) => (n == null ? '' : String(n));
-
-function blank(title = '', author = ''): Fields {
-  const d = new Date();
-  return { title, author, readYear: String(d.getFullYear()), readMonth: String(d.getMonth() + 1), readDay: '', notes: '' };
-}
-
-function parse(f: Fields): { readYear: number | null; readMonth: number | null; readDay: number | null } {
-  const num = (s: string, min: number, max: number, what: string) => {
-    if (!s.trim()) return null;
-    const n = Number(s);
-    if (!Number.isInteger(n) || n < min || n > max) throw new Error(`Проверьте ${what}: от ${min} до ${max}`);
-    return n;
-  };
-  const readYear = num(f.readYear, 1000, new Date().getFullYear() + 1, 'год');
-  const readMonth = readYear ? num(f.readMonth, 1, 12, 'месяц') : null;
-  const readDay = readMonth ? num(f.readDay, 1, 31, 'день') : null;
-  return { readYear, readMonth, readDay };
-}
+const blank = (title = '', author = ''): Fields => ({ title, author, notes: '' });
 
 export function BookForm() {
   const acc = account.value;
@@ -44,6 +27,8 @@ export function BookForm() {
   const d = params.d ? decodeParam(params.d) : null;
   const existing = useAsync(() => (d && acc ? fetchBook(acc.pk, d) : Promise.resolve(null)), [d, acc?.pk]);
   const [fields, setFields] = useState<Fields>(() => blank(query.title, query.author));
+  // Дата не сбрасывается после «Сохранить и добавить ещё»: книги из прошлого вносят пачкой.
+  const [date, setDate] = useState<DateChoice>(DEFAULT_CHOICE);
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -51,14 +36,8 @@ export function BookForm() {
   useEffect(() => {
     const b = existing.data;
     if (b) {
-      setFields({
-        title: b.title,
-        author: b.author,
-        readYear: str(b.readYear),
-        readMonth: str(b.readMonth),
-        readDay: str(b.readDay),
-        notes: b.notes,
-      });
+      setFields({ title: b.title, author: b.author, notes: b.notes });
+      setDate(choiceFromRead(b));
     }
   }, [existing.data]);
 
@@ -67,9 +46,9 @@ export function BookForm() {
   if (d && existing.error) return <ErrorAlert error={existing.error} onRetry={existing.reload} />;
   if (d && !existing.data) return <NotFound />;
 
-  const set = (key: keyof Fields) => (e: Event) => {
+  const change = (patch: Partial<Fields>) => {
     setSaved(false);
-    setFields({ ...fields, [key]: (e.currentTarget as HTMLInputElement).value });
+    setFields((f) => ({ ...f, ...patch }));
   };
 
   const save = async (andMore: boolean) => {
@@ -85,10 +64,11 @@ export function BookForm() {
         title: fields.title.trim(),
         author: fields.author.trim(),
         notes: fields.notes,
-        ...parse(fields),
+        ...readFromChoice(date),
         legacy: existing.data?.legacy ?? null,
       };
-      await saveBook(book);
+      await saveBook(book, existing.data?.createdAt);
+      rememberOwnAuthor(acc.pk, book.author);
       // «Прочитано!» из списка желаний: желание больше не нужно.
       if (query.wish) {
         const wish = await fetchWish(acc.pk, query.wish);
@@ -135,26 +115,17 @@ export function BookForm() {
           save(false);
         }}
       >
-        <div class="form-group">
-          <label for="book-title">Заголовок книги</label>
-          <input id="book-title" class="form-control" placeholder="Укажите заголовок" value={fields.title} onInput={set('title')} autoFocus={!d} />
-        </div>
-        <div class="form-group">
-          <label for="book-author">Автор книги</label>
-          <input id="book-author" class="form-control" placeholder="Укажите автора" value={fields.author} onInput={set('author')} />
-        </div>
-        <div class="form-group">
-          <label for="book-year">Приблизительная дата прочтения книги</label>
-          <div class="date-inputs">
-            <input id="book-year" class="form-control" type="number" inputMode="numeric" placeholder="год" value={fields.readYear} onInput={set('readYear')} />
-            <input class="form-control" type="number" inputMode="numeric" min={1} max={12} placeholder="месяц" aria-label="месяц" value={fields.readMonth} onInput={set('readMonth')} />
-            <input class="form-control" type="number" inputMode="numeric" min={1} max={31} placeholder="день" aria-label="день" value={fields.readDay} onInput={set('readDay')} />
-          </div>
-          <p class="help-block">Можно указать только год, год и месяц или полную дату. Можно и не указывать.</p>
-        </div>
+        <TitleAuthorInputs idPrefix="book" pk={acc.pk} title={fields.title} author={fields.author} autoFocus={!d} onChange={change} />
+        <ReadDateInput
+          value={date}
+          onChange={(c) => {
+            setSaved(false);
+            setDate(c);
+          }}
+        />
         <div class="form-group">
           <label for="book-notes">Ваши примечания</label>
-          <textarea id="book-notes" class="form-control" value={fields.notes} onInput={set('notes')} />
+          <textarea id="book-notes" class="form-control" value={fields.notes} onInput={(e) => change({ notes: e.currentTarget.value })} />
         </div>
 
         {error ? <ErrorAlert error={error} /> : null}

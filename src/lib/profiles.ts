@@ -2,7 +2,7 @@
 import { signal } from '@preact/signals';
 import * as nip19 from 'nostr-tools/nip19';
 import { shortNpub } from './account';
-import { latestByAddress, now, publish, query } from './nostr';
+import { latestByAddress, nextTime, publish, query } from './nostr';
 
 export interface Profile {
   name: string;
@@ -65,15 +65,11 @@ async function ownProfileEvent(pubkey: string) {
   return current;
 }
 
-// Новая версия профиля должна быть строго новее той, от которой отталкивались: при
-// равном времени relay оставляет версию с меньшим id, и правка может пропасть.
-const nextTime = (current?: { created_at: number }) => Math.max(now(), (current?.created_at ?? 0) + 1);
-
 export async function saveProfile(pubkey: string, name: string) {
   const current = await ownProfileEvent(pubkey);
   const raw = { ...(current ? parse(current.content) : {}), name, display_name: name };
   const tags = withShortTag(pubkey, current?.tags ?? []);
-  await publish({ kind: 0, created_at: nextTime(current), content: JSON.stringify(raw), tags });
+  await publish({ kind: 0, created_at: nextTime(current?.created_at), content: JSON.stringify(raw), tags });
   profiles.value = { ...profiles.value, [pubkey]: { name, raw } };
 }
 
@@ -89,7 +85,7 @@ export async function ensureShortTag(pubkey: string) {
   if (!current) return;
   if (!current.tags.some((t) => t[0] === SHORT_TAG && t[1] === shortId(pubkey))) {
     const tags = withShortTag(pubkey, current.tags);
-    await publish({ kind: 0, created_at: nextTime(current), content: current.content, tags });
+    await publish({ kind: 0, created_at: nextTime(current.created_at), content: current.content, tags });
   }
   localStorage.setItem(SHORT_TAG_OK, pubkey);
 }

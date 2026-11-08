@@ -101,15 +101,31 @@ await page.waitForTimeout(500);
 await shot(page, '07-mybooks-desktop');
 console.log('    книг в списке:', await page.locator('.entries > li').count());
 
-step('добавить книгу');
+step('подсказки названия и автора');
 await page.goto(BASE + '/book/add');
+await page.locator('#book-title').pressSequentially('мастер и марг');
+await page.getByRole('option', { name: /Мастер и Маргарита/ }).first().click();
+console.log('    автор из подсказки:', await page.inputValue('#book-author'));
+await page.fill('#book-author', '');
+await page.locator('#book-author').pressSequentially('н в гог');
+console.log('    варианты автора:', (await page.getByRole('option').allTextContents()).join(' / '));
+await shot(page, '08a-suggest');
+await page.keyboard.press('ArrowDown');
+await page.keyboard.press('Enter');
+console.log('    после Enter:', await page.inputValue('#book-author'), '| список закрыт?', (await page.getByRole('option').count()) === 0);
+
+step('добавить книгу с неточной датой');
 await page.fill('#book-title', 'Проверочная книга');
 await page.fill('#book-author', 'Тестовый Автор');
 await page.fill('#book-notes', 'Заметка\nв две строки');
+await page.getByText('Раньше…').click();
+await page.fill('#read-year', '2015');
+await page.selectOption('#read-month', '3');
+await page.getByText('Запишется: март 2015').waitFor();
 await shot(page, '08-book-form');
 await page.getByRole('button', { name: 'Сохранить и закрыть' }).click();
 await page.waitForURL(myUrl);
-await page.getByText('Проверочная книга').waitFor();
+await page.locator('.book-group', { has: page.locator('#year-2015') }).getByText('Проверочная книга').waitFor();
 
 step('редактировать и удалить');
 const row = page.locator('li', { hasText: 'Проверочная книга' });
@@ -118,11 +134,22 @@ await shot(page, '08b-hover-actions');
 await row.getByRole('link', { name: 'редактировать' }).click();
 await page.getByRole('heading', { name: 'Редактирование записи' }).waitFor();
 await page.waitForFunction(() => document.querySelector('#book-title')?.value === 'Проверочная книга');
+await page.getByText('Запишется: март 2015').waitFor();
+console.log('    «Раньше…» выбрано?', await page.getByLabel('Раньше…').isChecked());
 page.once('dialog', (d) => d.accept());
 await page.getByRole('button', { name: 'Удалить запись' }).click();
 await page.waitForURL(myUrl);
 await page.locator('.book-group').first().waitFor();
 console.log('    после удаления видна?', await page.getByText('Проверочная книга').count());
+
+step('«добавить ещё» помнит дату');
+await page.goto(BASE + '/book/add');
+await page.fill('#book-title', 'Вторая проверочная');
+await page.getByText('Раньше…').click();
+await page.fill('#read-year', '2012');
+await page.getByRole('button', { name: 'Сохранить и добавить ещё' }).click();
+await page.getByText('Запись успешно сохранена').waitFor();
+console.log('    после «ещё»:', await page.locator('.date-summary').textContent(), '| заголовок пуст?', (await page.inputValue('#book-title')) === '');
 
 step('желания');
 await page.goto(myUrl + '/wishes');
