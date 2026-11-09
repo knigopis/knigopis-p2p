@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@preact/signals": "^2.11.4",
-    "knigopis-pereplet": "^0.1.0",
+    "knigopis-pereplet": "^0.2.1",
     "nostr-tools": "^2.25.4",
     "preact": "^11.1.0",
     "preact-iso": "^2.12.2",
