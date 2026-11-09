@@ -29,7 +29,8 @@
   - `repo2.knigopis.com` — **данные**; `repo.knigopis.com` — устаревшие;
   - `www.knigopis.com_v2` / `gurov/knigopis2` — прототип v2 (Angular 2, бывший alpha.knigopis.com). **Отвергнут, дизайн берём из v1.**
   - Оформление (2026-11-09): у всех — описание по-русски и теги; старые помечены тегом `legacy` и плашкой
-    о статусе в начале README (у `repo`/`repo2` README когда-то собирал старый API). README этого репозитория —
+    о статусе в начале README, а `www.knigopis.com`, `_v2`, `api` и `repo` заархивированы (только чтение;
+    править — сначала `gh repo unarchive` токеном `knigopis`) (у `repo`/`repo2` README когда-то собирал старый API). README этого репозитория —
     для людей (что такое, свой узел, разработка, история), знания для работы — здесь.
 - Стороннее Android-приложение `org.sirekanyan.knigopis` (github.com/sirekanyan/knigopis, MIT, последний коммит 2022-01)
   работало через старый API. Вход в нём только через uLogin, а токены API лежали в файловом кеше сервера Ромы, так что
