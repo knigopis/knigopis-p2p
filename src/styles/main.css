@@ -809,6 +809,8 @@ label.date-mode {
   padding: 20px 24px;
   border: 1px solid var(--line);
   border-radius: 12px;
+  /* /settings#device, #servers — не под шапкой. */
+  scroll-margin-top: calc(var(--navbar-h) + 15px);
 }
 .panel > h3:first-child {
   margin-top: 0;
@@ -827,6 +829,27 @@ label.date-mode {
   .panel {
     padding: 16px 18px;
   }
+}
+
+/* Редко нужное (ключ, серверы) — свёрнуто под «Дополнительно». */
+.advanced > summary {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--link);
+  cursor: pointer;
+  list-style: none;
+}
+.advanced > summary::-webkit-details-marker {
+  display: none;
+}
+.advanced > summary::before {
+  content: '▸ ';
+}
+.advanced[open] > summary::before {
+  content: '▾ ';
+}
+.advanced > summary:hover {
+  color: var(--link-hover);
 }
 
 .progress {

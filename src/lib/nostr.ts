@@ -86,7 +86,7 @@ export async function query(filter: Filter, maxWait = 5000): Promise<Event[]> {
   if (!events.length) {
     const status = pool.listConnectionStatus();
     if (!relays.value.some((r) => status.get(normalizeURL(r)))) {
-      throw new Error('Нет связи ни с одним сервером. Проверьте интернет или список серверов в настройках.');
+      throw new Error('Нет связи ни с одним сервером. Проверьте интернет или список серверов: Настройки → Дополнительно.');
     }
   }
   return dedupe(events);

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import { normalizeURL } from 'nostr-tools/utils';
 import { account, loginLink, logout } from '../lib/account';
+import { defaultRelays } from '../lib/config';
 import { pool, relays, resetRelays, setRelays } from '../lib/nostr';
 import { ensureProfiles, profiles, saveProfile } from '../lib/profiles';
 import { fetchClaimsBy } from '../lib/records';
@@ -62,16 +63,14 @@ function Relays() {
     setText(relays.value.join('\n'));
   };
 
+  const edited = relays.value.join('\n') !== defaultRelays().join('\n');
+
   return (
-    <form class="panel" onSubmit={save}>
-      <h3>Серверы (relay)</h3>
+    <form class="panel" id="servers" onSubmit={save}>
+      <h3>Серверы</h3>
       <p>
-        Записи публикуются сразу на все серверы из списка и читаются с любого, который отвечает. Добавьте реплику —
-        и данные переживут отключение основного сервера.
-      </p>
-      <p class="text-muted">
-        Список по умолчанию обновляется вместе с сайтом. Запоминаются только ваши изменения: какие серверы вы добавили
-        и какие убрали.
+        Каждая запись сохраняется сразу на все серверы из списка. Новые серверы появляются здесь сами, с обновлением
+        сайта. Менять список нужно, только если у вас <a href="/node">свой узел</a>, которого в нём ещё нет.
       </p>
       <ul class="result-list">
         {relays.value.map((r) => {
@@ -91,31 +90,56 @@ function Relays() {
         <button class="btn btn-default" type="submit">
           Сохранить список
         </button>
-        <button
-          class="btn btn-link"
-          type="button"
-          onClick={() => {
-            resetRelays();
-            setText(relays.value.join('\n'));
-          }}
-        >
-          Вернуть по умолчанию
-        </button>
+        {edited && (
+          <button
+            class="btn btn-link"
+            type="button"
+            onClick={() => {
+              resetRelays();
+              setText(relays.value.join('\n'));
+            }}
+          >
+            Вернуть по умолчанию
+          </button>
+        )}
       </div>
     </form>
+  );
+}
+
+function KeyPanel({ nsec, npub }: { nsec: string; npub: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div class="panel">
+      <h3>Ключ</h3>
+      <p>
+        Ключ можно вставить при входе на другом устройстве или в другом приложении Nostr. Кто знает ключ, может писать от
+        вашего имени.
+      </p>
+      <button class="btn btn-default" type="button" onClick={() => setShow(!show)}>
+        {show ? 'Скрыть ключ' : 'Показать ключ'}
+      </button>
+      {show && <code class="secret">{nsec}</code>}
+      <p class="help-block">
+        Публичный ключ (его можно показывать): <code>{npub}</code>
+      </p>
+    </div>
   );
 }
 
 export function Settings() {
   const acc = account.value;
   const { route } = useLocation();
-  const [showKey, setShowKey] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const claims = useAsync(() => (acc ? fetchClaimsBy(acc.pk) : Promise.resolve([])), [acc?.pk]);
 
   useEffect(() => {
     if (acc) ensureProfiles([acc.pk]);
-    if (location.hash === '#device') document.getElementById('device')?.scrollIntoView();
+    const target = location.hash === '#device' || location.hash === '#servers' ? document.getElementById(location.hash.slice(1)) : null;
+    // Серверы лежат в свёрнутом «Дополнительно» — сначала раскрываем его.
+    const details = target?.closest('details');
+    if (details) details.open = true;
+    target?.scrollIntoView();
   }, [acc]);
 
   if (!acc) return <LoginRequired what="открыть настройки" />;
@@ -135,18 +159,9 @@ export function Settings() {
               Ключ — это ваш аккаунт. Он хранится только в этом браузере. Сохраните копию в надёжное место: без неё
               при очистке браузера доступ пропадёт.
             </p>
-            <div class="form-actions">
-              <button class="btn btn-primary" type="button" onClick={() => saveBackup(acc, nickname)}>
-                Скачать резервную копию
-              </button>
-              <button class="btn btn-default" type="button" onClick={() => setShowKey(!showKey)}>
-                {showKey ? 'Скрыть ключ' : 'Показать ключ'}
-              </button>
-            </div>
-            {showKey && <code class="secret">{acc.nsec}</code>}
-            <p class="help-block">
-              Публичный ключ (его можно показывать): <code>{acc.npub}</code>
-            </p>
+            <button class="btn btn-primary" type="button" onClick={() => saveBackup(acc, nickname)}>
+              Скачать резервную копию
+            </button>
           </div>
 
           <div class="panel" id="device">
@@ -196,8 +211,6 @@ export function Settings() {
             </a>
           </div>
 
-          <Relays />
-
           <div class="panel">
             <h3>Выход</h3>
             <p>Ключ будет удалён из этого браузера. Войти снова можно с резервной копией.</p>
@@ -216,6 +229,18 @@ export function Settings() {
           </div>
         </div>
       </div>
+
+      <details class="advanced">
+        <summary>Дополнительно</summary>
+        <div class="panels">
+          <div>
+            <KeyPanel nsec={acc.nsec} npub={acc.npub} />
+          </div>
+          <div>
+            <Relays />
+          </div>
+        </div>
+      </details>
     </div>
   );
 }
